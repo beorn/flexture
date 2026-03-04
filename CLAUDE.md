@@ -115,6 +115,25 @@ The most important test layer. 1200+ fuzz tests verify that incremental re-layou
 
 See `docs/testing.md` for test methodology, `docs/incremental-layout-bugs.md` for bug taxonomy and industry context.
 
+## Cache Diagnostics
+
+```bash
+FLEXX_STATS=1 bun run app   # Enable fingerprint cache hit/miss tracking
+```
+
+```typescript
+import { getLayoutStats } from "flexx"
+
+const stats = getLayoutStats()
+// { fingerprintHits: number, fingerprintMisses: number }
+```
+
+Only active when `FLEXX_STATS=1` — zero overhead in production.
+
+## Aspect Ratio
+
+`measureNode` correctly applies `minWidth`/`maxWidth`/`minHeight`/`maxHeight` constraints after computing aspect-ratio-derived dimensions.
+
 ## Anti-Patterns
 
 - **Don't allocate in hot paths** - layout-zero.ts avoids `new` in layout loops
