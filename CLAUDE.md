@@ -1,4 +1,4 @@
-# Flexx - Pure JavaScript Flexbox Layout Engine
+# Flexture - Pure JavaScript Flexbox Layout Engine
 
 Yoga-compatible API, 1.5-2.5x faster initial layout, 5.5x faster no-change re-layout, 2.5-3.5x smaller, pure JavaScript (no WASM).
 
@@ -12,7 +12,7 @@ bun run typecheck     # Type check
 
 ## Performance is Critical
 
-Flexx's value proposition is **performance**. Any change that MAY impact performance requires benchmark verification:
+Flexture's value proposition is **performance**. Any change that MAY impact performance requires benchmark verification:
 
 ```bash
 # Check for CPU-heavy processes that would skew results
@@ -75,7 +75,7 @@ src/
 | `src/layout-flex-lines.ts`           | Pre-alloc arrays, line breaking, flex distribution          |
 | `src/layout-measure.ts`              | measureNode - intrinsic sizing                              |
 | `src/node-zero.ts`                   | Node class - **second most performance-critical**           |
-| `bench/yoga-compare-warmup.bench.ts` | Main benchmark comparing Flexx vs Yoga                      |
+| `bench/yoga-compare-warmup.bench.ts` | Main benchmark comparing Flexture vs Yoga                      |
 | `tests/yoga-comparison.test.ts`      | Yoga compatibility tests (41 tests)                         |
 
 ## Architecture
@@ -86,13 +86,13 @@ src/
 
 ## Intentional Divergences from Yoga
 
-Flexx is Yoga-compatible but follows CSS spec where Yoga doesn't:
+Flexture is Yoga-compatible but follows CSS spec where Yoga doesn't:
 
-| Behavior                                  | Yoga                                                     | Flexx                      | CSS Spec                                             |
+| Behavior                                  | Yoga                                                     | Flexture                      | CSS Spec                                             |
 | ----------------------------------------- | -------------------------------------------------------- | -------------------------- | ---------------------------------------------------- |
 | `overflow:hidden/scroll` + `flexShrink:0` | Item expands to content size (ignores parent constraint) | Item shrinks to fit parent | §4.5: automatic min-size = 0 for overflow containers |
 
-**Details**: Yoga defaults `flexShrink` to 0 (unlike CSS's default of 1) and doesn't implement CSS §4.5's rule that overflow containers have `min-size: auto = 0`. This means in Yoga, an `overflow:hidden` child with 30 lines of content inside a height-10 parent will compute as height 30 — defeating the purpose of overflow clipping. Flexx ensures overflow containers can always shrink (`flexShrink >= 1`), matching CSS browser behavior. See `tests/yoga-overflow-compare.test.ts` for comparison tests.
+**Details**: Yoga defaults `flexShrink` to 0 (unlike CSS's default of 1) and doesn't implement CSS §4.5's rule that overflow containers have `min-size: auto = 0`. This means in Yoga, an `overflow:hidden` child with 30 lines of content inside a height-10 parent will compute as height 30 — defeating the purpose of overflow clipping. Flexture ensures overflow containers can always shrink (`flexShrink >= 1`), matching CSS browser behavior. See `tests/yoga-overflow-compare.test.ts` for comparison tests.
 
 ## Testing
 

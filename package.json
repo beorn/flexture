@@ -12,7 +12,7 @@
     "yoga",
     "zero-dependency"
   ],
-  "homepage": "https://github.com/beorn/flexture#readme",
+  "homepage": "https://beorn.github.io/flexture/",
   "bugs": {
     "url": "https://github.com/beorn/flexture/issues"
   },
@@ -47,6 +47,7 @@
     "bench:standalone": "bun bench/run.ts",
     "bench:compare": "bun bench/compare.ts",
     "typecheck": "tsc --noEmit",
+    "build:docs": "cd docs/site && bun run docs:build",
     "ci": "bun run typecheck && bun test",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
   },

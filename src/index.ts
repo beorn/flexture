@@ -1,5 +1,5 @@
 /**
- * Flexx - Pure JavaScript Flexbox Layout Engine
+ * Flexture - Pure JavaScript Flexbox Layout Engine
  *
  * A Yoga-compatible layout engine for terminal UIs and other environments
  * where WebAssembly is not available or desirable.

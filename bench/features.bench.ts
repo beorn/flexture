@@ -1,5 +1,5 @@
 /**
- * Feature-specific Flexx vs Yoga benchmarks
+ * Feature-specific Flexture vs Yoga benchmarks
  *
  * Targets specific flexbox features to identify performance differences.
  * Run: bun bench vendor/flexture/bench/features.bench.ts
@@ -32,7 +32,7 @@ const N = 100 // items per test
 
 describe("Feature: FlexGrow", () => {
   bench(
-    "flexx - flexGrow distribution",
+    "flexture - flexGrow distribution",
     () => {
       const root = Node.create()
       root.setWidth(1000)
@@ -80,7 +80,7 @@ describe("Feature: FlexGrow", () => {
 
 describe("Feature: FlexShrink", () => {
   bench(
-    "flexx - flexShrink overflow",
+    "flexture - flexShrink overflow",
     () => {
       const root = Node.create()
       root.setWidth(500) // Container smaller than content
@@ -130,7 +130,7 @@ describe("Feature: FlexShrink", () => {
 
 describe("Feature: FlexWrap", () => {
   bench(
-    "flexx - wrap with many items",
+    "flexture - wrap with many items",
     () => {
       const root = Node.create()
       root.setWidth(200)
@@ -178,7 +178,7 @@ describe("Feature: FlexWrap", () => {
 
 describe("Feature: Gap", () => {
   bench(
-    "flexx - gap between items",
+    "flexture - gap between items",
     () => {
       const root = Node.create()
       root.setWidth(1000)
@@ -228,7 +228,7 @@ describe("Feature: Gap", () => {
 
 describe("Feature: AbsolutePositioning", () => {
   bench(
-    "flexx - absolute children",
+    "flexture - absolute children",
     () => {
       const root = Node.create()
       root.setWidth(500)
@@ -280,7 +280,7 @@ describe("Feature: AbsolutePositioning", () => {
 
 describe("Feature: NestedLayouts", () => {
   bench(
-    "flexx - deep nesting (10 levels)",
+    "flexture - deep nesting (10 levels)",
     () => {
       const root = Node.create()
       root.setWidth(500)
@@ -347,7 +347,7 @@ describe("Feature: NestedLayouts", () => {
 
 describe("Feature: PercentValues", () => {
   bench(
-    "flexx - percent dimensions",
+    "flexture - percent dimensions",
     () => {
       const root = Node.create()
       root.setWidth(1000)
@@ -397,7 +397,7 @@ describe("Feature: PercentValues", () => {
 
 describe("Feature: AlignContent", () => {
   bench(
-    "flexx - alignContent space-between",
+    "flexture - alignContent space-between",
     () => {
       const root = Node.create()
       root.setWidth(200)
@@ -449,7 +449,7 @@ describe("Feature: AlignContent", () => {
 
 describe("Feature: MeasureFunc", () => {
   bench(
-    "flexx - measure functions",
+    "flexture - measure functions",
     () => {
       const root = Node.create()
       root.setWidth(500)

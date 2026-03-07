@@ -1,4 +1,4 @@
-# Flexx Tests
+# Flexture Tests
 
 **Layer 0 — Layout Engine**: Pure JavaScript flexbox layout, Yoga-compatible API. Zero-allocation design.
 
@@ -8,7 +8,7 @@
 - **Yoga compatibility**: same inputs produce same outputs as Yoga WASM (41 comparison tests)
 - **Caching correctness**: constraint fingerprinting edge cases — percent+wrap, shrink-wrap+min/max, stretch+aspect ratio, baseline
 - **Re-layout consistency**: incremental dirty-tree re-layout matches fresh layout (1200+ fuzz tests)
-- **Differential fuzz**: random tree structures compared Flexx vs Yoga to find discrepancies
+- **Differential fuzz**: random tree structures compared Flexture vs Yoga to find discrepancies
 - **Overflow divergence**: intentional CSS-spec-compliant overflow behavior vs Yoga
 - **Measure callbacks**: intrinsic sizing with AT_MOST/EXACTLY modes
 - **Border bottom false**: edge case with border bottom disabled
@@ -45,7 +45,7 @@ test("row layout distributes width", () => {
 ## Ad-Hoc Testing
 
 ```bash
-bun vitest run vendor/flexture/tests/                          # All flexx tests
+bun vitest run vendor/flexture/tests/                          # All flexture tests
 bun vitest run vendor/flexture/tests/layout.test.ts            # Core layout
 bun vitest run vendor/flexture/tests/yoga-comparison.test.ts   # Yoga compat
 bun vitest run vendor/flexture/tests/relayout-consistency.test.ts  # Fuzz re-layout

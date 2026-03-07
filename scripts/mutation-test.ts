@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Mutation testing for Flexx cache code paths.
+ * Mutation testing for Flexture cache code paths.
  *
  * Deliberately injects known-wrong values into cache/invalidation logic
  * and verifies the fuzz suite catches each mutation. If a mutation passes
@@ -187,7 +187,7 @@ async function main() {
   const gaps: string[] = []
   const skipped: string[] = []
 
-  console.log(`Mutation testing for Flexx cache code paths`)
+  console.log(`Mutation testing for Flexture cache code paths`)
   console.log(`Running ${mutations.length} mutations against relayout-consistency fuzz suite\n`)
 
   for (const mutation of mutations) {

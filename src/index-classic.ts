@@ -1,7 +1,7 @@
 /**
- * Flexx Classic - Allocating Layout Engine
+ * Flexture Classic - Allocating Layout Engine
  *
- * The classic (allocating) variant of Flexx. Use for debugging, comparison,
+ * The classic (allocating) variant of Flexture. Use for debugging, comparison,
  * or when you need reentrancy (concurrent layouts).
  *
  * The main export 'flexture' uses the faster zero-allocation algorithm.

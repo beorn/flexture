@@ -97,7 +97,7 @@ function createKanbanTree(engine: "classic" | "zero", cardsPerColumn: number): C
   return root
 }
 
-console.log("\n=== Flexx Classic vs Zero-alloc Algorithm Comparison ===\n")
+console.log("\n=== Flexture Classic vs Zero-alloc Algorithm Comparison ===\n")
 
 // Flat hierarchy
 console.log("Flat Hierarchy (list-like):")
@@ -165,4 +165,4 @@ console.log(
 console.log("\n=== Summary ===")
 console.log("Classic: Full features (RTL, baseline), more mature")
 console.log("Zero: Optimized for no allocations, missing RTL/baseline")
-console.log("\nRecommendation: See km-flexx-analysis bead for details")
+console.log("\nRecommendation: See km-flexture-analysis bead for details")

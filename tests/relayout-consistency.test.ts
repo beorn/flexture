@@ -515,7 +515,7 @@ describe("Re-layout Consistency: resize stability", () => {
   })
 
   it("column direction: measure function height constrained by parent", () => {
-    // km-flexx.measure-height regression: in column layouts, measure func
+    // km-flexture.measure-height regression: in column layouts, measure func
     // height should be constrained by parent main axis size
     const root = Node.create()
     root.setWidth(40)

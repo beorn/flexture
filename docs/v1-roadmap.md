@@ -1,4 +1,4 @@
-# Flexx v1.0 Roadmap
+# Flexture v1.0 Roadmap
 
 Current version: **0.1.0**
 
@@ -23,7 +23,7 @@ Every box must be checked before tagging 1.0.
 ### API Stability
 
 - [x] Yoga-compatible API surface (same constants, same method names)
-- [x] Two entry points: `@beorn/flexx` (zero-alloc) and `@beorn/flexx/classic` (allocating)
+- [x] Two entry points: `@beorn/flexture` (zero-alloc) and `@beorn/flexture/classic` (allocating)
 - [ ] API surface audit: review all public exports, remove any accidental leaks
 - [ ] TypeScript declaration files (`dist/`) build cleanly and match source types
 - [ ] No planned breaking changes (or: list remaining breaking changes and execute them pre-1.0)
@@ -43,7 +43,7 @@ Every box must be checked before tagging 1.0.
 - [x] `package.json` has correct `exports` map (`.` and `./classic`)
 - [x] `files` field limits published content to `dist` and `src`
 - [ ] `npm pack --dry-run` produces a clean, minimal tarball
-- [ ] Published on npm as `@beorn/flexx`
+- [ ] Published on npm as `@beorn/flexture`
 - [x] MIT license
 
 ### Documentation
@@ -60,16 +60,16 @@ Every box must be checked before tagging 1.0.
 
 ## Known Gaps
 
-1. ~~**Bundle audit** (bead `km-flexx.bundle-audit`)~~ -- Done. `bun scripts/measure-bundle.ts` measures all entry points. README and docs updated with accurate numbers.
-2. **npm publish** (bead `km-flexx.npm-publish`) -- blocked by vendor rename (`km-infra.vendor-rename-impl`). The package name `@beorn/flexx` needs to be claimed on npm.
+1. ~~**Bundle audit** (bead `km-flexture.bundle-audit`)~~ -- Done. `bun scripts/measure-bundle.ts` measures all entry points. README and docs updated with accurate numbers.
+2. **npm publish** (bead `km-flexture.npm-publish`) -- blocked by vendor rename (`km-infra.vendor-rename-impl`). The package name `@beorn/flexture` needs to be claimed on npm.
 3. **API surface audit** -- no formal review of which symbols are exported vs. internal. A pre-1.0 pass should ensure only intentional public API is accessible via the `exports` map.
 
 ## What's NOT in 1.0
 
 These are out of scope for the initial stable release:
 
-- **CSS Grid** -- Flexx is a flexbox engine. Grid is a different algorithm.
-- **Text layout** -- Flexx computes box positions. Text measurement is the consumer's responsibility (via measure functions).
+- **CSS Grid** -- Flexture is a flexbox engine. Grid is a different algorithm.
+- **Text layout** -- Flexture computes box positions. Text measurement is the consumer's responsibility (via measure functions).
 - **Multi-thread / worker support** -- The API is synchronous by design. Consumers can run it in a worker if needed.
 - **Browser build** -- The npm package targets Node.js/Bun. A browser-ready bundle (ESM) is a nice-to-have but not a 1.0 gate.
 
@@ -84,20 +84,20 @@ After 1.0:
 | Bug fix, performance improvement, documentation                                | **Patch** (1.0.1, 1.0.2)     |
 | Intentional Yoga divergence (following CSS spec where Yoga doesn't)            | **Minor** with documentation |
 
-**Yoga compatibility contract**: The Yoga-compatible API surface is part of the public API. Removing or renaming Yoga-compatible methods/constants is a breaking change. Adding Flexx-specific extensions is a minor change.
+**Yoga compatibility contract**: The Yoga-compatible API surface is part of the public API. Removing or renaming Yoga-compatible methods/constants is a breaking change. Adding Flexture-specific extensions is a minor change.
 
 ## Release Sequence
 
-Flexx should reach 1.0 **before** inkx, because:
+Flexture should reach 1.0 **before** inkx, because:
 
-1. Flexx has a smaller, more focused API surface (layout engine only)
-2. Flexx already passes 1368 tests including comprehensive fuzz testing
-3. inkx depends on Flexx -- a stable Flexx simplifies inkx's own 1.0 story
+1. Flexture has a smaller, more focused API surface (layout engine only)
+2. Flexture already passes 1368 tests including comprehensive fuzz testing
+3. inkx depends on Flexture -- a stable Flexture simplifies inkx's own 1.0 story
 4. The main blocker (vendor rename + npm publish) is shared with inkx
 
 Suggested order:
 
 1. Complete vendor rename (`km-infra.vendor-rename-impl`)
 2. Run bundle audit, verify all criteria above
-3. Tag and publish `@beorn/flexx@1.0.0`
-4. Update inkx's `peerDependencies` to `@beorn/flexx@^1.0.0`
+3. Tag and publish `@beorn/flexture@1.0.0`
+4. Update inkx's `peerDependencies` to `@beorn/flexture@^1.0.0`

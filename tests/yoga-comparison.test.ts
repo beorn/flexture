@@ -1,7 +1,7 @@
 /**
  * Yoga Compatibility Tests
  *
- * Systematically compares Flexx output against Yoga (the reference implementation)
+ * Systematically compares Flexture output against Yoga (the reference implementation)
  * to identify discrepancies and edge cases.
  *
  * Run: bun test tests/yoga-comparison.test.ts
@@ -10,8 +10,8 @@
 import { describe, expect, it, beforeAll } from "vitest"
 import { createLogger } from "decant"
 
-const log = createLogger("flexx:test:compat")
-import * as Flexx from "../src/index.js"
+const log = createLogger("flexture:test:compat")
+import * as Flexture from "../src/index.js"
 import initYoga, { type Yoga, type Node as YogaNode } from "yoga-wasm-web"
 import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
@@ -45,7 +45,7 @@ interface NodeLayout extends LayoutResult {
   children: NodeLayout[]
 }
 
-function getFlextureLayout(node: Flexx.Node): NodeLayout {
+function getFlextureLayout(node: Flexture.Node): NodeLayout {
   return {
     left: node.getComputedLeft(),
     top: node.getComputedTop(),
@@ -146,15 +146,15 @@ interface ChildConfig extends NodeConfig {
 }
 
 /**
- * Creates and configures a Flexx node
+ * Creates and configures a Flexture node
  */
-function createFlextureNode(config: NodeConfig): Flexx.Node {
-  const node = Flexx.Node.create()
+function createFlextureNode(config: NodeConfig): Flexture.Node {
+  const node = Flexture.Node.create()
   applyFlextureConfig(node, config)
   return node
 }
 
-function applyFlextureConfig(node: Flexx.Node, config: NodeConfig) {
+function applyFlextureConfig(node: Flexture.Node, config: NodeConfig) {
   if (config.width !== undefined) {
     node.setWidth(config.width)
   }
@@ -195,16 +195,16 @@ function applyFlextureConfig(node: Flexx.Node, config: NodeConfig) {
     node.setGap(config.gap.gutter, config.gap.value)
   }
   if (config.gapRow !== undefined) {
-    node.setGap(Flexx.GUTTER_ROW, config.gapRow)
+    node.setGap(Flexture.GUTTER_ROW, config.gapRow)
   }
   if (config.gapColumn !== undefined) {
-    node.setGap(Flexx.GUTTER_COLUMN, config.gapColumn)
+    node.setGap(Flexture.GUTTER_COLUMN, config.gapColumn)
   }
   if (config.padding !== undefined) {
-    node.setPadding(Flexx.EDGE_ALL, config.padding)
+    node.setPadding(Flexture.EDGE_ALL, config.padding)
   }
   if (config.paddingPercent !== undefined) {
-    node.setPaddingPercent(Flexx.EDGE_ALL, config.paddingPercent)
+    node.setPaddingPercent(Flexture.EDGE_ALL, config.paddingPercent)
   }
   if (config.margin !== undefined) {
     node.setMargin(config.margin.edge, config.margin.value)
@@ -339,18 +339,18 @@ interface CompareLayoutsOptions {
   rootConfig: NodeConfig
   childConfigs?: ChildConfig[]
   /** Custom setup for nodes that need special configuration */
-  customSetup?: (fRoot: Flexx.Node, yRoot: YogaNode) => void
+  customSetup?: (fRoot: Flexture.Node, yRoot: YogaNode) => void
   layoutWidth?: number
   layoutHeight?: number
 }
 
 /**
- * Main comparison helper - creates Flexx and Yoga trees, compares layouts
+ * Main comparison helper - creates Flexture and Yoga trees, compares layouts
  */
 function compareLayouts(options: CompareLayoutsOptions): boolean {
   const { category, name, rootConfig, childConfigs = [], customSetup, layoutWidth = 100, layoutHeight = 100 } = options
 
-  // Create Flexx tree
+  // Create Flexture tree
   const fRoot = createFlextureNode(rootConfig)
 
   // Create children
@@ -381,7 +381,7 @@ function compareLayouts(options: CompareLayoutsOptions): boolean {
   }
 
   // Calculate layouts
-  fRoot.calculateLayout(layoutWidth, layoutHeight, Flexx.DIRECTION_LTR)
+  fRoot.calculateLayout(layoutWidth, layoutHeight, Flexture.DIRECTION_LTR)
   yRoot.calculateLayout(layoutWidth, layoutHeight, yoga.DIRECTION_LTR)
 
   const flextureLayout = getFlextureLayout(fRoot)
@@ -413,7 +413,7 @@ describe("Yoga Comparison: FlexWrap", () => {
       childCount: 3,
       childWidth: 40,
       childHeight: 20,
-      flexWrap: Flexx.WRAP_WRAP,
+      flexWrap: Flexture.WRAP_WRAP,
     },
     {
       name: "wrap-reverse",
@@ -421,7 +421,7 @@ describe("Yoga Comparison: FlexWrap", () => {
       childCount: 3,
       childWidth: 40,
       childHeight: 20,
-      flexWrap: Flexx.WRAP_WRAP_REVERSE,
+      flexWrap: Flexture.WRAP_WRAP_REVERSE,
     },
   ])("$name: $description", ({ name, childCount, childWidth, childHeight, flexWrap }) => {
     const match = compareLayouts({
@@ -430,7 +430,7 @@ describe("Yoga Comparison: FlexWrap", () => {
       rootConfig: {
         width: 100,
         height: 100,
-        flexDirection: Flexx.FLEX_DIRECTION_ROW,
+        flexDirection: Flexture.FLEX_DIRECTION_ROW,
         flexWrap,
       },
       childConfigs: [{ width: childWidth, height: childHeight, count: childCount }],
@@ -445,8 +445,8 @@ describe("Yoga Comparison: FlexWrap", () => {
       rootConfig: {
         width: 100,
         height: 100,
-        flexDirection: Flexx.FLEX_DIRECTION_ROW,
-        flexWrap: Flexx.WRAP_WRAP,
+        flexDirection: Flexture.FLEX_DIRECTION_ROW,
+        flexWrap: Flexture.WRAP_WRAP,
         gapColumn: 10,
         gapRow: 5,
       },
@@ -462,8 +462,8 @@ describe("Yoga Comparison: FlexWrap", () => {
       rootConfig: {
         width: 100,
         height: 100,
-        flexDirection: Flexx.FLEX_DIRECTION_ROW,
-        flexWrap: Flexx.WRAP_WRAP,
+        flexDirection: Flexture.FLEX_DIRECTION_ROW,
+        flexWrap: Flexture.WRAP_WRAP,
       },
       childConfigs: [{ width: 40, height: 20, flexGrow: 1, count: 3 }],
     })
@@ -477,8 +477,8 @@ describe("Yoga Comparison: FlexWrap", () => {
       rootConfig: {
         width: 100,
         height: 100,
-        flexDirection: Flexx.FLEX_DIRECTION_COLUMN,
-        flexWrap: Flexx.WRAP_WRAP,
+        flexDirection: Flexture.FLEX_DIRECTION_COLUMN,
+        flexWrap: Flexture.WRAP_WRAP,
       },
       childConfigs: [{ width: 30, height: 40, count: 6 }],
     })
@@ -494,32 +494,32 @@ describe("Yoga Comparison: AlignContent", () => {
   const alignContentCases = [
     {
       name: "flex-start",
-      align: Flexx.ALIGN_FLEX_START,
+      align: Flexture.ALIGN_FLEX_START,
       description: "lines packed at start",
     },
     {
       name: "center",
-      align: Flexx.ALIGN_CENTER,
+      align: Flexture.ALIGN_CENTER,
       description: "lines packed at center",
     },
     {
       name: "flex-end",
-      align: Flexx.ALIGN_FLEX_END,
+      align: Flexture.ALIGN_FLEX_END,
       description: "lines packed at end",
     },
     {
       name: "space-between",
-      align: Flexx.ALIGN_SPACE_BETWEEN,
+      align: Flexture.ALIGN_SPACE_BETWEEN,
       description: "lines spaced evenly",
     },
     {
       name: "space-around",
-      align: Flexx.ALIGN_SPACE_AROUND,
+      align: Flexture.ALIGN_SPACE_AROUND,
       description: "lines with space around",
     },
     {
       name: "stretch",
-      align: Flexx.ALIGN_STRETCH,
+      align: Flexture.ALIGN_STRETCH,
       description: "lines stretch to fill",
     },
   ]
@@ -531,8 +531,8 @@ describe("Yoga Comparison: AlignContent", () => {
       rootConfig: {
         width: 100,
         height: 100,
-        flexDirection: Flexx.FLEX_DIRECTION_ROW,
-        flexWrap: Flexx.WRAP_WRAP,
+        flexDirection: Flexture.FLEX_DIRECTION_ROW,
+        flexWrap: Flexture.WRAP_WRAP,
         alignContent: align,
       },
       childConfigs: [{ width: 40, height: 20, count: 4 }],
@@ -557,10 +557,10 @@ describe("Yoga Comparison: AbsolutePositioning", () => {
       },
       childConfigs: [
         {
-          positionType: Flexx.POSITION_TYPE_ABSOLUTE,
+          positionType: Flexture.POSITION_TYPE_ABSOLUTE,
           position: [
-            { edge: Flexx.EDGE_LEFT, value: 0 },
-            { edge: Flexx.EDGE_TOP, value: 0 },
+            { edge: Flexture.EDGE_LEFT, value: 0 },
+            { edge: Flexture.EDGE_TOP, value: 0 },
           ],
           width: 50,
           height: 50,
@@ -577,12 +577,12 @@ describe("Yoga Comparison: AbsolutePositioning", () => {
       rootConfig: { width: 100, height: 100 },
       childConfigs: [
         {
-          positionType: Flexx.POSITION_TYPE_ABSOLUTE,
+          positionType: Flexture.POSITION_TYPE_ABSOLUTE,
           position: [
-            { edge: Flexx.EDGE_LEFT, value: 10 },
-            { edge: Flexx.EDGE_TOP, value: 10 },
-            { edge: Flexx.EDGE_RIGHT, value: 10 },
-            { edge: Flexx.EDGE_BOTTOM, value: 10 },
+            { edge: Flexture.EDGE_LEFT, value: 10 },
+            { edge: Flexture.EDGE_TOP, value: 10 },
+            { edge: Flexture.EDGE_RIGHT, value: 10 },
+            { edge: Flexture.EDGE_BOTTOM, value: 10 },
           ],
         },
       ],
@@ -597,10 +597,10 @@ describe("Yoga Comparison: AbsolutePositioning", () => {
       rootConfig: { width: 100, height: 100 },
       childConfigs: [
         {
-          positionType: Flexx.POSITION_TYPE_ABSOLUTE,
+          positionType: Flexture.POSITION_TYPE_ABSOLUTE,
           positionPercent: [
-            { edge: Flexx.EDGE_LEFT, value: 10 },
-            { edge: Flexx.EDGE_TOP, value: 10 },
+            { edge: Flexture.EDGE_LEFT, value: 10 },
+            { edge: Flexture.EDGE_TOP, value: 10 },
           ],
           width: 50,
           height: 50,
@@ -612,21 +612,21 @@ describe("Yoga Comparison: AbsolutePositioning", () => {
 
   it("absolute-with-margin: absolute with margin offset", () => {
     // This test needs custom setup for setting margin on specific edges
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
     fRoot.setHeight(100)
 
-    const fChild = Flexx.Node.create()
-    fChild.setPositionType(Flexx.POSITION_TYPE_ABSOLUTE)
-    fChild.setPosition(Flexx.EDGE_LEFT, 0)
-    fChild.setPosition(Flexx.EDGE_TOP, 0)
-    fChild.setMargin(Flexx.EDGE_LEFT, 10)
-    fChild.setMargin(Flexx.EDGE_TOP, 10)
+    const fChild = Flexture.Node.create()
+    fChild.setPositionType(Flexture.POSITION_TYPE_ABSOLUTE)
+    fChild.setPosition(Flexture.EDGE_LEFT, 0)
+    fChild.setPosition(Flexture.EDGE_TOP, 0)
+    fChild.setMargin(Flexture.EDGE_LEFT, 10)
+    fChild.setMargin(Flexture.EDGE_TOP, 10)
     fChild.setWidth(50)
     fChild.setHeight(50)
     fRoot.insertChild(fChild, 0)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -658,9 +658,9 @@ describe("Yoga Comparison: AbsolutePositioning", () => {
     expect(match).toBe(true)
   })
 
-  // Note: Flexx centers absolute children with auto margins, Yoga does not.
-  // This is a Flexx extension that follows CSS behavior more closely.
-  it.skip("absolute-centering: center absolute child with auto margins (Flexx extension)", () => {
+  // Note: Flexture centers absolute children with auto margins, Yoga does not.
+  // This is a Flexture extension that follows CSS behavior more closely.
+  it.skip("absolute-centering: center absolute child with auto margins (Flexture extension)", () => {
     // Intentionally skipped - documents known difference
   })
 })
@@ -672,22 +672,22 @@ describe("Yoga Comparison: AbsolutePositioning", () => {
 describe("Yoga Comparison: MinMaxDimensions", () => {
   it("min-width-overrides-shrink: minWidth prevents shrinking", () => {
     // Custom setup needed for two children with different configs
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
-    fRoot.setFlexDirection(Flexx.FLEX_DIRECTION_ROW)
+    fRoot.setFlexDirection(Flexture.FLEX_DIRECTION_ROW)
 
-    const fChild1 = Flexx.Node.create()
+    const fChild1 = Flexture.Node.create()
     fChild1.setWidth(80)
     fChild1.setMinWidth(60)
     fChild1.setFlexShrink(1)
     fRoot.insertChild(fChild1, 0)
 
-    const fChild2 = Flexx.Node.create()
+    const fChild2 = Flexture.Node.create()
     fChild2.setWidth(80)
     fChild2.setFlexShrink(1)
     fRoot.insertChild(fChild2, 1)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -721,20 +721,20 @@ describe("Yoga Comparison: MinMaxDimensions", () => {
   })
 
   it("max-width-overrides-grow: maxWidth caps growth", () => {
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
-    fRoot.setFlexDirection(Flexx.FLEX_DIRECTION_ROW)
+    fRoot.setFlexDirection(Flexture.FLEX_DIRECTION_ROW)
 
-    const fChild1 = Flexx.Node.create()
+    const fChild1 = Flexture.Node.create()
     fChild1.setFlexGrow(1)
     fChild1.setMaxWidth(30)
     fRoot.insertChild(fChild1, 0)
 
-    const fChild2 = Flexx.Node.create()
+    const fChild2 = Flexture.Node.create()
     fChild2.setFlexGrow(1)
     fRoot.insertChild(fChild2, 1)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -772,7 +772,7 @@ describe("Yoga Comparison: MinMaxDimensions", () => {
       rootConfig: {
         width: 100,
         height: 100,
-        flexDirection: Flexx.FLEX_DIRECTION_ROW,
+        flexDirection: Flexture.FLEX_DIRECTION_ROW,
       },
       childConfigs: [
         {
@@ -802,22 +802,22 @@ describe("Yoga Comparison: MinMaxDimensions", () => {
 
   it("nested-min-max: nested containers with constraints", () => {
     // Custom setup for nested structure
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
     fRoot.setHeight(100)
-    fRoot.setFlexDirection(Flexx.FLEX_DIRECTION_ROW)
+    fRoot.setFlexDirection(Flexture.FLEX_DIRECTION_ROW)
 
-    const fOuter = Flexx.Node.create()
+    const fOuter = Flexture.Node.create()
     fOuter.setFlexGrow(1)
     fOuter.setMaxWidth(60)
     fRoot.insertChild(fOuter, 0)
 
-    const fInner = Flexx.Node.create()
+    const fInner = Flexture.Node.create()
     fInner.setFlexGrow(1)
     fInner.setMinWidth(40)
     fOuter.insertChild(fInner, 0)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -861,7 +861,7 @@ describe("Yoga Comparison: Gap", () => {
       name: "row-gap-only",
       description: "gap between rows in wrapped content",
       gapRow: 10,
-      flexWrap: Flexx.WRAP_WRAP,
+      flexWrap: Flexture.WRAP_WRAP,
       childCount: 4,
       childWidth: 40,
       childHeight: 30,
@@ -881,7 +881,7 @@ describe("Yoga Comparison: Gap", () => {
       rootConfig: {
         width: 100,
         height: 100,
-        flexDirection: Flexx.FLEX_DIRECTION_ROW,
+        flexDirection: Flexture.FLEX_DIRECTION_ROW,
         flexWrap,
         gapRow,
         gapColumn,
@@ -898,7 +898,7 @@ describe("Yoga Comparison: Gap", () => {
       rootConfig: {
         width: 100,
         height: 100,
-        flexDirection: Flexx.FLEX_DIRECTION_ROW,
+        flexDirection: Flexture.FLEX_DIRECTION_ROW,
         gapColumn: 10,
       },
       childConfigs: [{ flexGrow: 1, height: 30, count: 3 }],
@@ -913,9 +913,9 @@ describe("Yoga Comparison: Gap", () => {
       rootConfig: {
         width: 100,
         height: 100,
-        flexDirection: Flexx.FLEX_DIRECTION_ROW,
-        flexWrap: Flexx.WRAP_WRAP,
-        gap: { gutter: Flexx.GUTTER_ALL, value: 10 },
+        flexDirection: Flexture.FLEX_DIRECTION_ROW,
+        flexWrap: Flexture.WRAP_WRAP,
+        gap: { gutter: Flexture.GUTTER_ALL, value: 10 },
       },
       childConfigs: [{ width: 25, height: 25, count: 6 }],
     })
@@ -929,21 +929,21 @@ describe("Yoga Comparison: Gap", () => {
 
 describe("Yoga Comparison: FlexShrink", () => {
   it("shrink-with-basis: different basis values", () => {
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
-    fRoot.setFlexDirection(Flexx.FLEX_DIRECTION_ROW)
+    fRoot.setFlexDirection(Flexture.FLEX_DIRECTION_ROW)
 
-    const fChild1 = Flexx.Node.create()
+    const fChild1 = Flexture.Node.create()
     fChild1.setFlexBasis(100)
     fChild1.setFlexShrink(1)
     fRoot.insertChild(fChild1, 0)
 
-    const fChild2 = Flexx.Node.create()
+    const fChild2 = Flexture.Node.create()
     fChild2.setFlexBasis(50)
     fChild2.setFlexShrink(1)
     fRoot.insertChild(fChild2, 1)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -976,21 +976,21 @@ describe("Yoga Comparison: FlexShrink", () => {
   })
 
   it("shrink-different-factors: unequal shrink factors", () => {
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
-    fRoot.setFlexDirection(Flexx.FLEX_DIRECTION_ROW)
+    fRoot.setFlexDirection(Flexture.FLEX_DIRECTION_ROW)
 
-    const fChild1 = Flexx.Node.create()
+    const fChild1 = Flexture.Node.create()
     fChild1.setWidth(100)
     fChild1.setFlexShrink(1)
     fRoot.insertChild(fChild1, 0)
 
-    const fChild2 = Flexx.Node.create()
+    const fChild2 = Flexture.Node.create()
     fChild2.setWidth(100)
     fChild2.setFlexShrink(2)
     fRoot.insertChild(fChild2, 1)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -1023,21 +1023,21 @@ describe("Yoga Comparison: FlexShrink", () => {
   })
 
   it("shrink-zero-no-shrink: shrink 0 prevents shrinking", () => {
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
-    fRoot.setFlexDirection(Flexx.FLEX_DIRECTION_ROW)
+    fRoot.setFlexDirection(Flexture.FLEX_DIRECTION_ROW)
 
-    const fChild1 = Flexx.Node.create()
+    const fChild1 = Flexture.Node.create()
     fChild1.setWidth(80)
     fChild1.setFlexShrink(0)
     fRoot.insertChild(fChild1, 0)
 
-    const fChild2 = Flexx.Node.create()
+    const fChild2 = Flexture.Node.create()
     fChild2.setWidth(80)
     fChild2.setFlexShrink(1)
     fRoot.insertChild(fChild2, 1)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -1076,19 +1076,19 @@ describe("Yoga Comparison: FlexShrink", () => {
 
 describe("Yoga Comparison: FlexGrow", () => {
   it("grow-with-fixed-sibling: grow next to fixed width", () => {
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
-    fRoot.setFlexDirection(Flexx.FLEX_DIRECTION_ROW)
+    fRoot.setFlexDirection(Flexture.FLEX_DIRECTION_ROW)
 
-    const fChild1 = Flexx.Node.create()
+    const fChild1 = Flexture.Node.create()
     fChild1.setWidth(30)
     fRoot.insertChild(fChild1, 0)
 
-    const fChild2 = Flexx.Node.create()
+    const fChild2 = Flexture.Node.create()
     fChild2.setFlexGrow(1)
     fRoot.insertChild(fChild2, 1)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -1119,23 +1119,23 @@ describe("Yoga Comparison: FlexGrow", () => {
   })
 
   it("grow-unequal: unequal grow factors", () => {
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
-    fRoot.setFlexDirection(Flexx.FLEX_DIRECTION_ROW)
+    fRoot.setFlexDirection(Flexture.FLEX_DIRECTION_ROW)
 
-    const fChild1 = Flexx.Node.create()
+    const fChild1 = Flexture.Node.create()
     fChild1.setFlexGrow(1)
     fRoot.insertChild(fChild1, 0)
 
-    const fChild2 = Flexx.Node.create()
+    const fChild2 = Flexture.Node.create()
     fChild2.setFlexGrow(2)
     fRoot.insertChild(fChild2, 1)
 
-    const fChild3 = Flexx.Node.create()
+    const fChild3 = Flexture.Node.create()
     fChild3.setFlexGrow(1)
     fRoot.insertChild(fChild3, 2)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -1170,21 +1170,21 @@ describe("Yoga Comparison: FlexGrow", () => {
   })
 
   it("grow-with-basis: flex-grow with flex-basis", () => {
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
-    fRoot.setFlexDirection(Flexx.FLEX_DIRECTION_ROW)
+    fRoot.setFlexDirection(Flexture.FLEX_DIRECTION_ROW)
 
-    const fChild1 = Flexx.Node.create()
+    const fChild1 = Flexture.Node.create()
     fChild1.setFlexBasis(20)
     fChild1.setFlexGrow(1)
     fRoot.insertChild(fChild1, 0)
 
-    const fChild2 = Flexx.Node.create()
+    const fChild2 = Flexture.Node.create()
     fChild2.setFlexBasis(20)
     fChild2.setFlexGrow(1)
     fRoot.insertChild(fChild2, 1)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -1223,29 +1223,29 @@ describe("Yoga Comparison: FlexGrow", () => {
 
 describe("Yoga Comparison: NestedLayouts", () => {
   it("nested-flex: multiple nesting levels", () => {
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
     fRoot.setHeight(100)
-    fRoot.setFlexDirection(Flexx.FLEX_DIRECTION_ROW)
+    fRoot.setFlexDirection(Flexture.FLEX_DIRECTION_ROW)
 
-    const fLeft = Flexx.Node.create()
+    const fLeft = Flexture.Node.create()
     fLeft.setFlexGrow(1)
-    fLeft.setFlexDirection(Flexx.FLEX_DIRECTION_COLUMN)
+    fLeft.setFlexDirection(Flexture.FLEX_DIRECTION_COLUMN)
     fRoot.insertChild(fLeft, 0)
 
-    const fLeftTop = Flexx.Node.create()
+    const fLeftTop = Flexture.Node.create()
     fLeftTop.setFlexGrow(1)
     fLeft.insertChild(fLeftTop, 0)
 
-    const fLeftBottom = Flexx.Node.create()
+    const fLeftBottom = Flexture.Node.create()
     fLeftBottom.setFlexGrow(1)
     fLeft.insertChild(fLeftBottom, 1)
 
-    const fRight = Flexx.Node.create()
+    const fRight = Flexture.Node.create()
     fRight.setFlexGrow(2)
     fRoot.insertChild(fRight, 1)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -1286,31 +1286,31 @@ describe("Yoga Comparison: NestedLayouts", () => {
   })
 
   it("mixed-constraints: nested with various constraints", () => {
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
     fRoot.setHeight(100)
-    fRoot.setFlexDirection(Flexx.FLEX_DIRECTION_COLUMN)
-    fRoot.setPadding(Flexx.EDGE_ALL, 5)
+    fRoot.setFlexDirection(Flexture.FLEX_DIRECTION_COLUMN)
+    fRoot.setPadding(Flexture.EDGE_ALL, 5)
 
-    const fHeader = Flexx.Node.create()
+    const fHeader = Flexture.Node.create()
     fHeader.setHeight(20)
     fRoot.insertChild(fHeader, 0)
 
-    const fContent = Flexx.Node.create()
+    const fContent = Flexture.Node.create()
     fContent.setFlexGrow(1)
-    fContent.setFlexDirection(Flexx.FLEX_DIRECTION_ROW)
-    fContent.setGap(Flexx.GUTTER_COLUMN, 5)
+    fContent.setFlexDirection(Flexture.FLEX_DIRECTION_ROW)
+    fContent.setGap(Flexture.GUTTER_COLUMN, 5)
     fRoot.insertChild(fContent, 1)
 
-    const fSidebar = Flexx.Node.create()
+    const fSidebar = Flexture.Node.create()
     fSidebar.setWidth(20)
     fContent.insertChild(fSidebar, 0)
 
-    const fMain = Flexx.Node.create()
+    const fMain = Flexture.Node.create()
     fMain.setFlexGrow(1)
     fContent.insertChild(fMain, 1)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -1359,21 +1359,21 @@ describe("Yoga Comparison: NestedLayouts", () => {
 
 describe("Yoga Comparison: PercentValues", () => {
   it("percent-nested: percent in nested container", () => {
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
     fRoot.setHeight(100)
 
-    const fOuter = Flexx.Node.create()
+    const fOuter = Flexture.Node.create()
     fOuter.setWidthPercent(50)
     fOuter.setHeightPercent(50)
     fRoot.insertChild(fOuter, 0)
 
-    const fInner = Flexx.Node.create()
+    const fInner = Flexture.Node.create()
     fInner.setWidthPercent(50)
     fInner.setHeightPercent(50)
     fOuter.insertChild(fInner, 0)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -1406,18 +1406,18 @@ describe("Yoga Comparison: PercentValues", () => {
   })
 
   it("percent-margin: percent margin values", () => {
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
     fRoot.setHeight(100)
 
-    const fChild = Flexx.Node.create()
+    const fChild = Flexture.Node.create()
     fChild.setWidth(50)
     fChild.setHeight(50)
-    fChild.setMarginPercent(Flexx.EDGE_LEFT, 10)
-    fChild.setMarginPercent(Flexx.EDGE_TOP, 10)
+    fChild.setMarginPercent(Flexture.EDGE_LEFT, 10)
+    fChild.setMarginPercent(Flexture.EDGE_TOP, 10)
     fRoot.insertChild(fChild, 0)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -1467,24 +1467,24 @@ describe("Yoga Comparison: PercentValues", () => {
 
 describe("Yoga Comparison: IntentionalDifferences", () => {
   it("shrink-weighted-by-basis: CSS spec weighted shrink", () => {
-    // Both Flexx and Yoga use CSS spec: shrink proportional to (flexShrink * flexBasis)
-    // This test verifies Flexx matches Yoga's behavior.
+    // Both Flexture and Yoga use CSS spec: shrink proportional to (flexShrink * flexBasis)
+    // This test verifies Flexture matches Yoga's behavior.
 
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
-    fRoot.setFlexDirection(Flexx.FLEX_DIRECTION_ROW)
+    fRoot.setFlexDirection(Flexture.FLEX_DIRECTION_ROW)
 
-    const fChild1 = Flexx.Node.create()
+    const fChild1 = Flexture.Node.create()
     fChild1.setFlexBasis(200) // Large basis
     fChild1.setFlexShrink(1)
     fRoot.insertChild(fChild1, 0)
 
-    const fChild2 = Flexx.Node.create()
+    const fChild2 = Flexture.Node.create()
     fChild2.setFlexBasis(100) // Small basis
     fChild2.setFlexShrink(1)
     fRoot.insertChild(fChild2, 1)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -1518,7 +1518,7 @@ describe("Yoga Comparison: IntentionalDifferences", () => {
     log.debug?.(`shrink-weighted-by-basis: ${match ? "MATCHES" : "DIFFERS (expected)"}`)
     if (!match) {
       log.debug?.(`  Yoga (CSS spec weighted shrink): ${JSON.stringify(yogaLayout.children.map((c) => c.width))}`)
-      log.debug?.(`  Flexx (proportional shrink): ${JSON.stringify(flextureLayout.children.map((c) => c.width))}`)
+      log.debug?.(`  Flexture (proportional shrink): ${JSON.stringify(flextureLayout.children.map((c) => c.width))}`)
     }
   })
 })
@@ -1535,7 +1535,7 @@ describe("Yoga Comparison: EdgeCases", () => {
       rootConfig: {
         width: 0,
         height: 0,
-        flexDirection: Flexx.FLEX_DIRECTION_ROW,
+        flexDirection: Flexture.FLEX_DIRECTION_ROW,
       },
       childConfigs: [{ width: 50, height: 50 }],
       layoutWidth: 0,
@@ -1551,8 +1551,8 @@ describe("Yoga Comparison: EdgeCases", () => {
       rootConfig: {
         width: 100,
         height: 100,
-        flexDirection: Flexx.FLEX_DIRECTION_ROW,
-        flexWrap: Flexx.WRAP_WRAP,
+        flexDirection: Flexture.FLEX_DIRECTION_ROW,
+        flexWrap: Flexture.WRAP_WRAP,
       },
       childConfigs: [{ width: 50, height: 50 }],
     })
@@ -1565,7 +1565,7 @@ describe("Yoga Comparison: EdgeCases", () => {
       name: "overflow-no-shrink",
       rootConfig: {
         width: 100,
-        flexDirection: Flexx.FLEX_DIRECTION_ROW,
+        flexDirection: Flexture.FLEX_DIRECTION_ROW,
       },
       childConfigs: [{ width: 50, height: 50, flexShrink: 0, count: 3 }],
     })
@@ -1573,28 +1573,28 @@ describe("Yoga Comparison: EdgeCases", () => {
   })
 
   it("mixed-absolute-relative: absolute and relative siblings", () => {
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
     fRoot.setHeight(100)
-    fRoot.setFlexDirection(Flexx.FLEX_DIRECTION_COLUMN)
+    fRoot.setFlexDirection(Flexture.FLEX_DIRECTION_COLUMN)
 
-    const fRel1 = Flexx.Node.create()
+    const fRel1 = Flexture.Node.create()
     fRel1.setHeight(30)
     fRoot.insertChild(fRel1, 0)
 
-    const fAbs = Flexx.Node.create()
-    fAbs.setPositionType(Flexx.POSITION_TYPE_ABSOLUTE)
-    fAbs.setPosition(Flexx.EDGE_RIGHT, 10)
-    fAbs.setPosition(Flexx.EDGE_TOP, 10)
+    const fAbs = Flexture.Node.create()
+    fAbs.setPositionType(Flexture.POSITION_TYPE_ABSOLUTE)
+    fAbs.setPosition(Flexture.EDGE_RIGHT, 10)
+    fAbs.setPosition(Flexture.EDGE_TOP, 10)
     fAbs.setWidth(20)
     fAbs.setHeight(20)
     fRoot.insertChild(fAbs, 1)
 
-    const fRel2 = Flexx.Node.create()
+    const fRel2 = Flexture.Node.create()
     fRel2.setFlexGrow(1)
     fRoot.insertChild(fRel2, 2)
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -1634,20 +1634,20 @@ describe("Yoga Comparison: EdgeCases", () => {
   })
 
   it("deeply-nested: 5 levels of nesting", () => {
-    const fRoot = Flexx.Node.create()
+    const fRoot = Flexture.Node.create()
     fRoot.setWidth(100)
     fRoot.setHeight(100)
 
     let fCurrent = fRoot
     for (let i = 0; i < 5; i++) {
-      const child = Flexx.Node.create()
+      const child = Flexture.Node.create()
       child.setFlexGrow(1)
-      child.setPadding(Flexx.EDGE_ALL, 5)
+      child.setPadding(Flexture.EDGE_ALL, 5)
       fCurrent.insertChild(child, 0)
       fCurrent = child
     }
 
-    fRoot.calculateLayout(100, 100, Flexx.DIRECTION_LTR)
+    fRoot.calculateLayout(100, 100, Flexture.DIRECTION_LTR)
     const flextureLayout = getFlextureLayout(fRoot)
 
     const yRoot = yoga.Node.create()
@@ -1717,7 +1717,7 @@ describe("Summary Report", () => {
           if (test.yoga && test.flexture) {
             lines.push("Expected (Yoga):")
             lines.push(formatLayout(test.yoga))
-            lines.push("Actual (Flexx):")
+            lines.push("Actual (Flexture):")
             lines.push(formatLayout(test.flexture))
           }
           if (test.error) {

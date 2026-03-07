@@ -1,9 +1,9 @@
 /**
- * Flexx Testing Utilities
+ * Flexture Testing Utilities
  *
  * Diagnostic helpers for verifying layout correctness, especially
  * incremental re-layout consistency. Used by downstream consumers
- * (inkx, km-tui) and flexx's own test suite.
+ * (inkx, km-tui) and flexture's own test suite.
  *
  * @example
  * ```typescript

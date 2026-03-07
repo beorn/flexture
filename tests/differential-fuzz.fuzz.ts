@@ -1,8 +1,8 @@
 /**
- * Differential Fuzz Testing - Flexx vs Yoga
+ * Differential Fuzz Testing - Flexture vs Yoga
  *
  * Generates random tree structures with random styles and compares
- * layout output between Flexx and Yoga to find discrepancies.
+ * layout output between Flexture and Yoga to find discrepancies.
  *
  * Uses seeded random generation for reproducibility.
  *
@@ -15,8 +15,8 @@
 import { describe, expect, it, beforeAll } from "vitest"
 import { createLogger } from "decant"
 
-const log = createLogger("flexx:test:fuzz")
-import * as Flexx from "../src/index.js"
+const log = createLogger("flexture:test:fuzz")
+import * as Flexture from "../src/index.js"
 import initYoga, { type Yoga, type Node as YogaNode, type FlexDirection, type Justify, type Align } from "yoga-wasm-web"
 import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
@@ -80,7 +80,7 @@ interface NodeLayout {
   children: NodeLayout[]
 }
 
-function getFlextureLayout(node: Flexx.Node): NodeLayout {
+function getFlextureLayout(node: Flexture.Node): NodeLayout {
   return {
     left: node.getComputedLeft(),
     top: node.getComputedTop(),
@@ -117,16 +117,16 @@ function layoutsMatch(
   const diffs: string[] = []
 
   if (Math.abs(a.left - b.left) > epsilon) {
-    diffs.push(`${path}.left: flexx=${a.left.toFixed(2)} yoga=${b.left.toFixed(2)}`)
+    diffs.push(`${path}.left: flexture=${a.left.toFixed(2)} yoga=${b.left.toFixed(2)}`)
   }
   if (Math.abs(a.top - b.top) > epsilon) {
-    diffs.push(`${path}.top: flexx=${a.top.toFixed(2)} yoga=${b.top.toFixed(2)}`)
+    diffs.push(`${path}.top: flexture=${a.top.toFixed(2)} yoga=${b.top.toFixed(2)}`)
   }
   if (Math.abs(a.width - b.width) > epsilon) {
-    diffs.push(`${path}.width: flexx=${a.width.toFixed(2)} yoga=${b.width.toFixed(2)}`)
+    diffs.push(`${path}.width: flexture=${a.width.toFixed(2)} yoga=${b.width.toFixed(2)}`)
   }
   if (Math.abs(a.height - b.height) > epsilon) {
-    diffs.push(`${path}.height: flexx=${a.height.toFixed(2)} yoga=${b.height.toFixed(2)}`)
+    diffs.push(`${path}.height: flexture=${a.height.toFixed(2)} yoga=${b.height.toFixed(2)}`)
   }
 
   if (a.children.length !== b.children.length) {
@@ -176,7 +176,7 @@ interface TreeSpec {
 // ============================================================================
 
 /**
- * Generates simple, flat layouts that should always match between Flexx and Yoga.
+ * Generates simple, flat layouts that should always match between Flexture and Yoga.
  * - All children have explicit dimensions OR flexGrow
  * - No complex constraint combinations
  * - No flex-wrap
@@ -185,7 +185,7 @@ interface TreeSpec {
 function generateSimpleTree(ctx: RandomContext, childCount: number): TreeSpec {
   const rootWidth = randomInt(ctx, 200, 400)
   const rootHeight = randomInt(ctx, 150, 300)
-  const flexDirection = randomChoice(ctx, [Flexx.FLEX_DIRECTION_ROW, Flexx.FLEX_DIRECTION_COLUMN])
+  const flexDirection = randomChoice(ctx, [Flexture.FLEX_DIRECTION_ROW, Flexture.FLEX_DIRECTION_COLUMN])
 
   const children: TreeSpec[] = []
   for (let i = 0; i < childCount; i++) {
@@ -196,7 +196,7 @@ function generateSimpleTree(ctx: RandomContext, childCount: number): TreeSpec {
       childStyle.flexGrow = randomInt(ctx, 1, 3)
     } else {
       // Fixed dimensions - ensure they fit within parent
-      if (flexDirection === Flexx.FLEX_DIRECTION_ROW) {
+      if (flexDirection === Flexture.FLEX_DIRECTION_ROW) {
         childStyle.width = randomInt(ctx, 20, Math.floor(rootWidth / childCount) - 10)
         childStyle.height = randomInt(ctx, 20, rootHeight - 20)
       } else {
@@ -230,13 +230,13 @@ function generateSimpleTree(ctx: RandomContext, childCount: number): TreeSpec {
   // Optional justify/align
   if (randomBool(ctx, 0.3)) {
     rootStyle.justifyContent = randomChoice(ctx, [
-      Flexx.JUSTIFY_FLEX_START,
-      Flexx.JUSTIFY_CENTER,
-      Flexx.JUSTIFY_FLEX_END,
+      Flexture.JUSTIFY_FLEX_START,
+      Flexture.JUSTIFY_CENTER,
+      Flexture.JUSTIFY_FLEX_END,
     ])
   }
   if (randomBool(ctx, 0.3)) {
-    rootStyle.alignItems = randomChoice(ctx, [Flexx.ALIGN_FLEX_START, Flexx.ALIGN_CENTER, Flexx.ALIGN_STRETCH])
+    rootStyle.alignItems = randomChoice(ctx, [Flexture.ALIGN_FLEX_START, Flexture.ALIGN_CENTER, Flexture.ALIGN_STRETCH])
   }
 
   return { style: rootStyle, children }
@@ -248,11 +248,11 @@ function generateSimpleTree(ctx: RandomContext, childCount: number): TreeSpec {
 function generateNestedTree(ctx: RandomContext, outerChildCount: number, innerChildCount: number): TreeSpec {
   const rootWidth = randomInt(ctx, 300, 500)
   const rootHeight = randomInt(ctx, 200, 400)
-  const rootDirection = randomChoice(ctx, [Flexx.FLEX_DIRECTION_ROW, Flexx.FLEX_DIRECTION_COLUMN])
+  const rootDirection = randomChoice(ctx, [Flexture.FLEX_DIRECTION_ROW, Flexture.FLEX_DIRECTION_COLUMN])
 
   const children: TreeSpec[] = []
   for (let i = 0; i < outerChildCount; i++) {
-    const innerDirection = randomChoice(ctx, [Flexx.FLEX_DIRECTION_ROW, Flexx.FLEX_DIRECTION_COLUMN])
+    const innerDirection = randomChoice(ctx, [Flexture.FLEX_DIRECTION_ROW, Flexture.FLEX_DIRECTION_COLUMN])
 
     const innerChildren: TreeSpec[] = []
     for (let j = 0; j < innerChildCount; j++) {
@@ -292,7 +292,7 @@ function generateNestedTree(ctx: RandomContext, outerChildCount: number, innerCh
 // Tree Building
 // ============================================================================
 
-function applyStyleToFlextureNode(node: Flexx.Node, style: NodeStyle): void {
+function applyStyleToFlextureNode(node: Flexture.Node, style: NodeStyle): void {
   if (style.width !== undefined) node.setWidth(style.width)
   if (style.height !== undefined) node.setHeight(style.height)
   if (style.flexDirection !== undefined) {
@@ -305,10 +305,10 @@ function applyStyleToFlextureNode(node: Flexx.Node, style: NodeStyle): void {
   }
   if (style.alignItems !== undefined) node.setAlignItems(style.alignItems)
   if (style.padding !== undefined) {
-    node.setPadding(Flexx.EDGE_ALL, style.padding)
+    node.setPadding(Flexture.EDGE_ALL, style.padding)
   }
-  if (style.margin !== undefined) node.setMargin(Flexx.EDGE_ALL, style.margin)
-  if (style.gap !== undefined) node.setGap(Flexx.GUTTER_ALL, style.gap)
+  if (style.margin !== undefined) node.setMargin(Flexture.EDGE_ALL, style.margin)
+  if (style.gap !== undefined) node.setGap(Flexture.GUTTER_ALL, style.gap)
 }
 
 function applyStyleToYogaNode(node: YogaNode, style: NodeStyle): void {
@@ -330,8 +330,8 @@ function applyStyleToYogaNode(node: YogaNode, style: NodeStyle): void {
   if (style.gap !== undefined) node.setGap(yoga.GUTTER_ALL, style.gap)
 }
 
-function buildFlextureTree(spec: TreeSpec): Flexx.Node {
-  const node = Flexx.Node.create()
+function buildFlextureTree(spec: TreeSpec): Flexture.Node {
+  const node = Flexture.Node.create()
   applyStyleToFlextureNode(node, spec.style)
   for (let i = 0; i < spec.children.length; i++) {
     node.insertChild(buildFlextureTree(spec.children[i]!), i)
@@ -363,7 +363,7 @@ function runSimpleTest(seed: number, childCount: number, epsilon = EPSILON): { p
   const rootWidth = spec.style.width ?? 300
   const rootHeight = spec.style.height ?? 200
 
-  flextureRoot.calculateLayout(rootWidth, rootHeight, Flexx.DIRECTION_LTR)
+  flextureRoot.calculateLayout(rootWidth, rootHeight, Flexture.DIRECTION_LTR)
   yogaRoot.calculateLayout(rootWidth, rootHeight, yoga.DIRECTION_LTR)
 
   const flextureLayout = getFlextureLayout(flextureRoot)
@@ -385,7 +385,7 @@ function runNestedTest(seed: number, outer: number, inner: number): { passed: bo
   const rootWidth = spec.style.width ?? 300
   const rootHeight = spec.style.height ?? 200
 
-  flextureRoot.calculateLayout(rootWidth, rootHeight, Flexx.DIRECTION_LTR)
+  flextureRoot.calculateLayout(rootWidth, rootHeight, Flexture.DIRECTION_LTR)
   yogaRoot.calculateLayout(rootWidth, rootHeight, yoga.DIRECTION_LTR)
 
   const flextureLayout = getFlextureLayout(flextureRoot)
@@ -491,7 +491,7 @@ describe("Fuzz: Kanban Layouts", () => {
       columns.push({
         style: {
           flexGrow: 1,
-          flexDirection: Flexx.FLEX_DIRECTION_COLUMN,
+          flexDirection: Flexture.FLEX_DIRECTION_COLUMN,
           padding: randomInt(ctx, 5, 10),
           gap: randomInt(ctx, 3, 8),
         },
@@ -503,7 +503,7 @@ describe("Fuzz: Kanban Layouts", () => {
       style: {
         width: randomInt(ctx, 400, 600),
         height: randomInt(ctx, 300, 500),
-        flexDirection: Flexx.FLEX_DIRECTION_ROW,
+        flexDirection: Flexture.FLEX_DIRECTION_ROW,
         gap: randomInt(ctx, 5, 15),
         padding: randomInt(ctx, 10, 20),
       },
@@ -522,7 +522,7 @@ describe("Fuzz: Kanban Layouts", () => {
     const rootWidth = spec.style.width ?? 500
     const rootHeight = spec.style.height ?? 400
 
-    flextureRoot.calculateLayout(rootWidth, rootHeight, Flexx.DIRECTION_LTR)
+    flextureRoot.calculateLayout(rootWidth, rootHeight, Flexture.DIRECTION_LTR)
     yogaRoot.calculateLayout(rootWidth, rootHeight, yoga.DIRECTION_LTR)
 
     const flextureLayout = getFlextureLayout(flextureRoot)
@@ -569,7 +569,7 @@ describe("Fuzz: Dashboard Layouts", () => {
       style: {
         width: randomInt(ctx, 400, 600),
         height: randomInt(ctx, 300, 500),
-        flexDirection: Flexx.FLEX_DIRECTION_COLUMN,
+        flexDirection: Flexture.FLEX_DIRECTION_COLUMN,
       },
       children: [
         // Header
@@ -581,7 +581,7 @@ describe("Fuzz: Dashboard Layouts", () => {
         {
           style: {
             flexGrow: 1,
-            flexDirection: Flexx.FLEX_DIRECTION_ROW,
+            flexDirection: Flexture.FLEX_DIRECTION_ROW,
           },
           children: [
             // Sidebar
@@ -593,7 +593,7 @@ describe("Fuzz: Dashboard Layouts", () => {
             {
               style: {
                 flexGrow: 1,
-                flexDirection: Flexx.FLEX_DIRECTION_COLUMN,
+                flexDirection: Flexture.FLEX_DIRECTION_COLUMN,
                 padding: randomInt(ctx, 5, 10),
                 gap: randomInt(ctx, 5, 10),
               },
@@ -616,7 +616,7 @@ describe("Fuzz: Dashboard Layouts", () => {
     const rootWidth = spec.style.width ?? 500
     const rootHeight = spec.style.height ?? 400
 
-    flextureRoot.calculateLayout(rootWidth, rootHeight, Flexx.DIRECTION_LTR)
+    flextureRoot.calculateLayout(rootWidth, rootHeight, Flexture.DIRECTION_LTR)
     yogaRoot.calculateLayout(rootWidth, rootHeight, yoga.DIRECTION_LTR)
 
     const flextureLayout = getFlextureLayout(flextureRoot)
@@ -669,7 +669,7 @@ describe("Fuzz: Stress Test (50 Nested)", () => {
 describe("Differential Fuzz Summary", () => {
   it("prints summary", () => {
     log.debug?.(
-      `\n${"=".repeat(60)}\nDIFFERENTIAL FUZZ TEST SUMMARY\n${"=".repeat(60)}\n\nThese tests generate random flexbox trees and compare Flexx vs Yoga.\nUse seed values to reproduce any failing cases.\n\nTest categories:\n- Simple Flat: Single level with fixed/flex children\n- Nested: Two-level layouts with flexGrow\n- Kanban: Column-based card layouts (TUI pattern)\n- Dashboard: Header + sidebar + content (TUI pattern)\n- Stress: Many random seeds for broad coverage\n\nTolerance: ${EPSILON}px (for rounding differences)\n\n${"=".repeat(60)}`,
+      `\n${"=".repeat(60)}\nDIFFERENTIAL FUZZ TEST SUMMARY\n${"=".repeat(60)}\n\nThese tests generate random flexbox trees and compare Flexture vs Yoga.\nUse seed values to reproduce any failing cases.\n\nTest categories:\n- Simple Flat: Single level with fixed/flex children\n- Nested: Two-level layouts with flexGrow\n- Kanban: Column-based card layouts (TUI pattern)\n- Dashboard: Header + sidebar + content (TUI pattern)\n- Stress: Many random seeds for broad coverage\n\nTolerance: ${EPSILON}px (for rounding differences)\n\n${"=".repeat(60)}`,
     )
   })
 })

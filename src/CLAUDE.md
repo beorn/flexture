@@ -1,10 +1,10 @@
-# Flexx Internals
+# Flexture Internals
 
 Read this before modifying any source file. This documents the layout algorithm, zero-allocation design, caching system, and integration points.
 
 ## Architecture Overview
 
-Flexx is a pure-JavaScript flexbox layout engine with a Yoga-compatible API. The "zero" in `layout-zero.ts` / `node-zero.ts` means **zero-allocation layout** -- the layout pass reuses pre-allocated structures instead of creating temporary objects on the heap.
+Flexture is a pure-JavaScript flexbox layout engine with a Yoga-compatible API. The "zero" in `layout-zero.ts` / `node-zero.ts` means **zero-allocation layout** -- the layout pass reuses pre-allocated structures instead of creating temporary objects on the heap.
 
 ```
                             Public API
@@ -168,7 +168,7 @@ The most complex phase. For each relative child:
 
 ### Why It Matters
 
-Interactive TUIs re-layout on every keystroke. GC pauses cause visible jank. Flexx avoids heap allocation during layout passes.
+Interactive TUIs re-layout on every keystroke. GC pauses cause visible jank. Flexture avoids heap allocation during layout passes.
 
 ### Module-Level Pre-Allocated Arrays
 
@@ -318,20 +318,20 @@ This is Yoga's algorithm. Layout positions stored in `layout.left`/`layout.top` 
 
 `measureNode()` (~240 lines) is a lightweight alternative to `layoutNode()` (~1650 lines). It computes `width` and `height` but NOT `left`/`top`. Used during Phase 5 for intrinsic sizing of auto-sized container children. Save/restore of `layout.width`/`layout.height` is required around `measureNode` calls because it overwrites those fields.
 
-## Integration: How inkx Uses Flexx
+## Integration: How inkx Uses Flexture
 
-inkx uses flexx through an adapter layer:
+inkx uses flexture through an adapter layer:
 
 1. `inkx/src/layout-engine.ts` defines the `LayoutEngine` / `LayoutNode` interfaces
-2. `inkx/src/adapters/flexx-zero-adapter.ts` wraps `Node` in `FlexxZeroNodeAdapter`
-3. The adapter is mostly delegation (Flexx already has a Yoga-compatible API)
+2. `inkx/src/adapters/flexture-zero-adapter.ts` wraps `Node` in `FlextureZeroNodeAdapter`
+3. The adapter is mostly delegation (Flexture already has a Yoga-compatible API)
 4. Measure modes are translated from numeric constants to strings (`"exactly"`, `"at-most"`, `"undefined"`)
 
 inkx calls `calculateLayout()` on every render. The no-change case (cursor movement, selection) is the most common scenario in the km TUI, which is why the 5.5x fingerprint-cache advantage matters.
 
 ## Intentional Divergences from Yoga
 
-| Behavior                                  | Yoga                                     | Flexx                                 | CSS Spec                                       |
+| Behavior                                  | Yoga                                     | Flexture                                 | CSS Spec                                       |
 | ----------------------------------------- | ---------------------------------------- | ------------------------------------- | ---------------------------------------------- |
 | `overflow:hidden/scroll` + `flexShrink:0` | Item expands to content (ignores parent) | Item shrinks to fit parent            | 4.5: auto min-size = 0 for overflow containers |
 | Default `flexShrink`                      | 0 (Yoga native default)                  | 0 (matches Yoga)                      | CSS default is 1                               |
@@ -375,7 +375,7 @@ positionType: RELATIVE     // Same as CSS
 
 ## Performance Characteristics
 
-### Where Flexx Wins
+### Where Flexture Wins
 
 - **Node creation**: ~8x cheaper than Yoga (no WASM boundary crossing)
 - **Initial layout**: 1.5-2.5x faster (JS node creation dominates)
@@ -389,7 +389,7 @@ positionType: RELATIVE     // Same as CSS
 
 ### For TUI Use Cases
 
-The no-change case dominates (cursor movement, selection, scrolling). Flexx's fingerprint cache makes this essentially free. This is the key differentiator.
+The no-change case dominates (cursor movement, selection, scrolling). Flexture's fingerprint cache makes this essentially free. This is the key differentiator.
 
 ## Common Pitfalls
 
@@ -433,8 +433,8 @@ top -l 1 -n 5 -stats command,cpu | head -10
 cd vendor/flexture && bun bench bench/yoga-compare-warmup.bench.ts
 
 # 3. Compare against baseline:
-#    Flexx should be ~2x Yoga for flat trees
-#    Flexx should be ~2.3x Yoga for shallow deep trees
+#    Flexture should be ~2x Yoga for flat trees
+#    Flexture should be ~2.3x Yoga for shallow deep trees
 #    No-change re-layout should be ~5.5x Yoga
 
 # 4. If you changed source, rebuild:
@@ -463,7 +463,7 @@ The fuzz tests are the most important layer. They've caught 3 distinct caching b
 
 ### Three Caching Bugs (2026-02-10)
 
-All 524 Flexx tests passed. The TUI showed visual corruption (text bleeding past card borders) only during re-layout of partially-dirty trees. Root cause: zero tests exercised `calculateLayout()` twice on the same tree.
+All 524 Flexture tests passed. The TUI showed visual corruption (text bleeding past card borders) only during re-layout of partially-dirty trees. Root cause: zero tests exercised `calculateLayout()` twice on the same tree.
 
 **Bug 1: measureNode corruption** — `measureNode()` overwrote `layout.width/height` on clean nodes as a side effect. The fingerprint check then skipped the clean node, preserving corrupted values. Fix: save/restore `layout.width/height` around `measureNode` calls.
 
@@ -477,13 +477,13 @@ All three bugs were found by a **differential oracle**: build tree → layout �
 
 Baseline measurements vs Yoga:
 
-- **Flat trees**: Flexx ~2x faster (node creation dominates — no WASM boundary)
-- **Shallow deep trees**: Flexx ~2.3x faster
-- **No-change re-layout**: Flexx ~5.5x faster (fingerprint cache, ~27ns)
-- **FlexWrap**: Yoga 1.77x faster (Flexx's multi-line allocation is the weak spot)
+- **Flat trees**: Flexture ~2x faster (node creation dominates — no WASM boundary)
+- **Shallow deep trees**: Flexture ~2.3x faster
+- **No-change re-layout**: Flexture ~5.5x faster (fingerprint cache, ~27ns)
+- **FlexWrap**: Yoga 1.77x faster (Flexture's multi-line allocation is the weak spot)
 - **Incremental dirty leaf**: Yoga 2.8-3.4x faster (WASM per-node computation is faster)
 
-Key takeaway: For TUI use cases, the no-change case dominates (cursor movement, selection, scrolling). Flexx's fingerprint cache makes this essentially free.
+Key takeaway: For TUI use cases, the no-change case dominates (cursor movement, selection, scrolling). Flexture's fingerprint cache makes this essentially free.
 
 ## Common Blind Paths
 

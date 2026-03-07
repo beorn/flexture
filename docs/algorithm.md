@@ -1,4 +1,4 @@
-# Flexx Layout Algorithm
+# Flexture Layout Algorithm
 
 Reference: [Planning-nl/flexbox.js](https://github.com/Planning-nl/flexbox.js)
 
@@ -12,7 +12,7 @@ The algorithm works in multiple passes:
 
 ## Two Algorithm Variants
 
-Flexx provides two layout algorithm implementations:
+Flexture provides two layout algorithm implementations:
 
 | Algorithm      | File             | Default | Strengths                               |
 | -------------- | ---------------- | ------- | --------------------------------------- |

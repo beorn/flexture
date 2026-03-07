@@ -1,15 +1,15 @@
-# Getting Started with Flexx
+# Getting Started with Flexture
 
-> **Building a terminal UI?** Use [inkx](https://github.com/beorn/inkx), which uses Flexx by default. You get React components, hooks, and layout feedback without touching the low-level API below.
+> **Building a terminal UI?** Use [inkx](https://github.com/beorn/inkx), which uses Flexture by default. You get React components, hooks, and layout feedback without touching the low-level API below.
 >
-> This guide is for developers who need the Flexx API directly — framework authors, canvas renderers, or anyone replacing Yoga.
+> This guide is for developers who need the Flexture API directly — framework authors, canvas renderers, or anyone replacing Yoga.
 
 ## Installation
 
 ```bash
-bun add @beorn/flexx
+bun add @beorn/flexture
 # or
-npm install @beorn/flexx
+npm install @beorn/flexture
 ```
 
 ## Your First Layout
@@ -17,7 +17,7 @@ npm install @beorn/flexx
 Create a simple row with two children:
 
 ```typescript
-import { Node, FLEX_DIRECTION_ROW, DIRECTION_LTR } from "@beorn/flexx"
+import { Node, FLEX_DIRECTION_ROW, DIRECTION_LTR } from "@beorn/flexture"
 
 // Create the root node
 const root = Node.create()
@@ -145,7 +145,7 @@ root.calculateLayout(200, undefined, DIRECTION_LTR)
 
 ## Dirty Tracking
 
-Flexx tracks which nodes have changed, so relayout only recalculates what's needed:
+Flexture tracks which nodes have changed, so relayout only recalculates what's needed:
 
 ```typescript
 root.calculateLayout(200, 100, DIRECTION_LTR) // Full calculation

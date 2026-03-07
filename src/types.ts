@@ -1,5 +1,5 @@
 /**
- * Flexx Types
+ * Flexture Types
  *
  * TypeScript interfaces for the flexbox layout engine.
  */

@@ -1,6 +1,6 @@
-# Contributing to Flexx
+# Contributing to Flexture
 
-Thanks for your interest in contributing to Flexx! This guide covers the essentials.
+Thanks for your interest in contributing to Flexture! This guide covers the essentials.
 
 ## Prerequisites
 
@@ -11,8 +11,8 @@ Thanks for your interest in contributing to Flexx! This guide covers the essenti
 ## Getting Started
 
 ```bash
-git clone https://github.com/beorn/flexx.git
-cd flexx
+git clone https://github.com/beorn/flexture.git
+cd flexture
 bun install
 bun run build       # Compile TypeScript
 bun run typecheck   # Type check without emitting
@@ -34,7 +34,7 @@ bun test tests/relayout-consistency.test.ts
 
 ## Running Benchmarks
 
-Performance is Flexx's core value proposition. Any change touching hot paths (`src/layout-zero.ts`, `src/node-zero.ts`) **must** include benchmark verification.
+Performance is Flexture's core value proposition. Any change touching hot paths (`src/layout-zero.ts`, `src/node-zero.ts`) **must** include benchmark verification.
 
 ```bash
 # 1. Check for CPU-heavy processes that would skew results

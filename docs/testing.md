@@ -1,6 +1,6 @@
-# Flexx Testing Infrastructure
+# Flexture Testing Infrastructure
 
-Flexx uses a multi-layered testing strategy to ensure both initial layout correctness and incremental re-layout consistency. The test suite has caught 3 distinct caching/invalidation bugs that passed all single-pass tests.
+Flexture uses a multi-layered testing strategy to ensure both initial layout correctness and incremental re-layout consistency. The test suite has caught 3 distinct caching/invalidation bugs that passed all single-pass tests.
 
 ## Test Categories
 
@@ -24,7 +24,7 @@ bun test tests/layout/
 
 The most sophisticated test layer. These test **incremental re-layout** — the scenario where `calculateLayout()` is called on a tree that was previously laid out, with some nodes marked dirty.
 
-**Why this matters**: Flexx uses caching (fingerprints, layout cache, measure cache) to skip recomputing unchanged subtrees. These caches are essential for performance but create subtle correctness risks. All 3 bugs found in Flexx were invisible to single-pass tests.
+**Why this matters**: Flexture uses caching (fingerprints, layout cache, measure cache) to skip recomputing unchanged subtrees. These caches are essential for performance but create subtle correctness risks. All 3 bugs found in Flexture were invisible to single-pass tests.
 
 ```bash
 bun test tests/relayout-consistency.test.ts
@@ -83,15 +83,15 @@ When a fuzz test fails, the seed uniquely identifies the tree structure for repr
 
 ### 4. Differential Fuzz Tests (100 seeds)
 
-Separate from relayout-consistency, these fuzz tests compare Flexx's zero-allocation and classic algorithms against each other, ensuring both produce identical results.
+Separate from relayout-consistency, these fuzz tests compare Flexture's zero-allocation and classic algorithms against each other, ensuring both produce identical results.
 
 ```bash
 bun test tests/differential-fuzz.fuzz.ts
 ```
 
-## Public Testing API (`@beorn/flexx/testing`)
+## Public Testing API (`@beorn/flexture/testing`)
 
-Flexx exports diagnostic helpers for downstream consumers (inkx, km-tui):
+Flexture exports diagnostic helpers for downstream consumers (inkx, km-tui):
 
 ```typescript
 import {
@@ -103,7 +103,7 @@ import {
   expectRelayoutMatchesFresh,
   expectIdempotent,
   expectResizeRoundTrip,
-} from "@beorn/flexx/testing"
+} from "@beorn/flexture/testing"
 ```
 
 | Export                                        | Description                                          |
@@ -183,7 +183,7 @@ The test suite verifies these properties across random trees:
 ## Running Tests
 
 ```bash
-# All flexx tests
+# All flexture tests
 bun test
 
 # Just re-layout consistency (most thorough)

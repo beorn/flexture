@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Flexx Layout Benchmarks - Standalone Runner
+ * Flexture Layout Benchmarks - Standalone Runner
  *
  * Run: bun bench/run.ts
  *
@@ -134,7 +134,7 @@ function createKanbanTree(cardsPerColumn: number): Node {
 // Main
 // ============================================================================
 
-console.log("# Flexx Layout Benchmarks")
+console.log("# Flexture Layout Benchmarks")
 console.log("")
 console.log("## Hardware")
 console.log(`- Platform: ${os.platform()} ${os.arch()}`)
@@ -301,5 +301,5 @@ console.log(formatResult(results.at(-1)!))
 console.log("")
 console.log("## Summary")
 console.log("")
-console.log("For terminal UIs (typically <500 nodes), Flexx handles layout in <1ms.")
+console.log("For terminal UIs (typically <500 nodes), Flexture handles layout in <1ms.")
 console.log("This is more than fast enough for 60fps rendering (16.67ms per frame).")

@@ -1,5 +1,5 @@
 /**
- * Profile Flexx layout to identify hot spots.
+ * Profile Flexture layout to identify hot spots.
  * Run: bun bench/profile.ts
  */
 
@@ -37,7 +37,7 @@ function countNodes(node: Node): number {
   return count
 }
 
-console.log("=== Flexx Layout Profiling ===\n")
+console.log("=== Flexture Layout Profiling ===\n")
 
 // Warmup
 const warmup = createWideTree(5, 10)

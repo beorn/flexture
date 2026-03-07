@@ -38,7 +38,7 @@ import {
 } from "../src/index.js"
 import { createChild, expectLayout, expectWidth } from "./test-utils.js"
 
-describe("Flexx Layout Engine", () => {
+describe("Flexture Layout Engine", () => {
   describe("Basic Layout", () => {
     it("should layout a single node with explicit dimensions", () => {
       const root = Node.create()

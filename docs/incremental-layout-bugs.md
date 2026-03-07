@@ -1,6 +1,6 @@
 # Incremental Layout: Correctness Challenges
 
-A knowledge base on the correctness challenges of incremental layout in flexbox engines — drawing from Chrome's LayoutNG, Yoga, PanGui, and Flexx's own experience.
+A knowledge base on the correctness challenges of incremental layout in flexbox engines — drawing from Chrome's LayoutNG, Yoga, PanGui, and Flexture's own experience.
 
 ## The Fundamental Tension
 
@@ -64,7 +64,7 @@ _Source: [taligarsiel.com/Projects/howbrowserswork.htm](https://taligarsiel.com/
 
 ## Bug Taxonomy
 
-From studying these engines (and Flexx's own bugs), incremental layout bugs fall into a few categories:
+From studying these engines (and Flexture's own bugs), incremental layout bugs fall into a few categories:
 
 ### 1. Sentinel Value Collisions
 
@@ -128,9 +128,9 @@ Use the same tree instance across multiple `calculateLayout()` calls with varyin
 
 Deliberately inject known-wrong values into cache logic (flip a `<=` to `<`, swap a sentinel value). If no test fails, that indicates a coverage gap. Useful for verifying that the fuzz suite actually exercises both "cache hit" and "cache miss" paths.
 
-## Flexx's Approach
+## Flexture's Approach
 
-Flexx combines aggressive caching with extensive correctness testing:
+Flexture combines aggressive caching with extensive correctness testing:
 
 **Caching layers:**
 
@@ -147,6 +147,6 @@ Flexx combines aggressive caching with extensive correctness testing:
 - **Side-effect isolation** (save/restore layout state in measurement)
 - **Flex distribution guard** — Detects when flex grow/shrink changed a child's size, preventing stale cache hits
 
-**Performance trade-off:** The fingerprint cache makes Flexx **5.5x faster** than Yoga for no-change re-layout (27ns regardless of tree size). However, the per-node caching overhead makes Flexx **2.8-3.4x slower** than Yoga for incremental re-layout when nodes are actually dirty. This is a deliberate trade-off — in interactive TUIs, most keystrokes don't change layout, so the no-change case dominates.
+**Performance trade-off:** The fingerprint cache makes Flexture **5.5x faster** than Yoga for no-change re-layout (27ns regardless of tree size). However, the per-node caching overhead makes Flexture **2.8-3.4x slower** than Yoga for incremental re-layout when nodes are actually dirty. This is a deliberate trade-off — in interactive TUIs, most keystrokes don't change layout, so the no-change case dominates.
 
-Where Chrome's Blink needed a ground-up rewrite (LayoutNG) to escape cascading cache bugs, PanGui chose to skip caching entirely, and Yoga uses conservative invalidation, Flexx pursues aggressive caching paired with rigorous empirical verification.
+Where Chrome's Blink needed a ground-up rewrite (LayoutNG) to escape cascading cache bugs, PanGui chose to skip caching entirely, and Yoga uses conservative invalidation, Flexture pursues aggressive caching paired with rigorous empirical verification.

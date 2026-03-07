@@ -1,5 +1,5 @@
 /**
- * Flexx Layout Benchmarks
+ * Flexture Layout Benchmarks
  *
  * Methodology (following Taffy's approach):
  * - Isolate layout computation from tree creation
@@ -158,7 +158,7 @@ function createDashboardTree(): Node {
 // Benchmarks
 // ============================================================================
 
-describe("Flexx Layout Benchmarks", () => {
+describe("Flexture Layout Benchmarks", () => {
   describe("Flat Hierarchy (list-like)", () => {
     let tree100: Node
     let tree500: Node

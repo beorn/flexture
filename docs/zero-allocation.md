@@ -1,6 +1,6 @@
 # Zero-Allocation Layout Engine
 
-This document describes the zero-allocation optimization in Flexx and its trade-offs.
+This document describes the zero-allocation optimization in Flexture and its trade-offs.
 
 ## Motivation
 
@@ -84,7 +84,7 @@ for (const child of children) {
 
 ## Benchmark Results
 
-| Scenario       | Flexx Classic | Flexx Zero-alloc | Yoga WASM   |
+| Scenario       | Flexture Classic | Flexture Zero-alloc | Yoga WASM   |
 | -------------- | ------------- | ---------------- | ----------- |
 | Flat 500 nodes | 1x            | 1.75-2x faster   | ~0.5x       |
 | Deep 50 levels | 1x            | ~1x (similar)    | 1.2x faster |
@@ -122,10 +122,10 @@ Both algorithms now have complete feature parity:
 
 ```typescript
 // Default: Zero-allocation algorithm (recommended)
-import { Node } from "@beorn/flexx"
+import { Node } from "@beorn/flexture"
 
 // Classic algorithm (for debugging or comparison)
-import { Node } from "@beorn/flexx/classic"
+import { Node } from "@beorn/flexture/classic"
 ```
 
 Both exports have identical APIs - only the internal algorithm differs.

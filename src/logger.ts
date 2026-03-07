@@ -57,7 +57,7 @@ async function detectLogger(namespace: string): Promise<ConditionalLogger> {
 
 // Eagerly initialize (top-level await)
 // This runs once at module load time
-_logger = await detectLogger("flexx:layout")
+_logger = await detectLogger("flexture:layout")
 
 /** Logger instance - use with optional chaining: `log.debug?.('message')` */
 export const log: ConditionalLogger = {

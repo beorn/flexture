@@ -1,5 +1,5 @@
 /**
- * Flexx Classic vs Zero-Alloc Algorithm Comparison
+ * Flexture Classic vs Zero-Alloc Algorithm Comparison
  *
  * Compares layout performance between:
  * - Classic algorithm (layout.ts)
