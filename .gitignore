@@ -3,3 +3,7 @@ node_modules/
 coverage/
 .bundle-measure/
 .DS_Store
+docs/site/.vitepress/dist/
+docs/site/.vitepress/cache/
+*.log
+bun.lockb
