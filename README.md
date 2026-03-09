@@ -68,9 +68,7 @@ Most developers should use a framework built on Flexily, not Flexily directly. F
 ## Installation
 
 ```bash
-bun add @beorn/flexily
-# or
-npm install @beorn/flexily
+npm install flexily
 ```
 
 ## Performance
