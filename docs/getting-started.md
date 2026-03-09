@@ -1,6 +1,6 @@
 # Getting Started with Flexily
 
-> **Building a terminal UI?** Use [silvery](https://github.com/beorn/silvery), which uses Flexily by default. You get React components, hooks, and layout feedback without touching the low-level API below.
+> **Building a terminal UI?** Use [silvery](https://silvery.dev), which uses Flexily by default. You get React components, hooks, and layout feedback without touching the low-level API below.
 >
 > This guide is for developers who need the Flexily API directly — framework authors, canvas renderers, or anyone replacing Yoga.
 

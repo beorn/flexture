@@ -45,11 +45,11 @@ Most developers should use a framework built on Flexily, not Flexily directly. F
 - **Specialized tools** where you need direct control over layout computation
 - **Anyone replacing Yoga** who wants a drop-in pure-JS alternative
 
-> **Building a terminal UI?** Use [silvery](https://github.com/beorn/silvery), which uses Flexily by default. You get React components, hooks, and layout feedback without touching the low-level API.
+> **Building a terminal UI?** Use [silvery](https://silvery.dev), which uses Flexily by default. You get React components, hooks, and layout feedback without touching the low-level API.
 
 ## Status
 
-1368 tests passing, including 41/41 Yoga compatibility tests and 1200+ incremental re-layout fuzz tests. Used by [silvery](https://github.com/beorn/silvery) as its default layout engine.
+1368 tests passing, including 41/41 Yoga compatibility tests and 1200+ incremental re-layout fuzz tests. Used by [silvery](https://silvery.dev) as its default layout engine.
 
 | Feature                                       | Status   |
 | --------------------------------------------- | -------- |
@@ -178,7 +178,7 @@ Same constants, same method names, same behavior.
 | [Taffy](https://github.com/DioxusLabs/taffy)            | Rust       | High-performance layout library supporting Flexbox and CSS Grid. Used by Dioxus and Bevy.          |
 | [flexbox.js](https://github.com/Planning-nl/flexbox.js) | JavaScript | Pure JS flexbox engine by Planning-nl. Reference implementation that inspired Flexily's algorithm. |
 | [css-layout](https://www.npmjs.com/package/css-layout)  | JavaScript | Facebook's original pure-JS flexbox, predecessor to Yoga. Deprecated.                              |
-| [silvery](https://github.com/beorn/silvery)             | TypeScript | React for CLIs with layout feedback. Uses Flexily by default.                                      |
+| [silvery](https://silvery.dev)             | TypeScript | React for CLIs with layout feedback. Uses Flexily by default.                                      |
 
 ## Code Structure
 
