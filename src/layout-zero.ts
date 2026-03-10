@@ -1088,8 +1088,11 @@ function layoutNode(
         // Percent of PARENT's cross axis (resolveValue handles NaN -> 0)
         childCrossSize = resolveValue(crossDim, crossAxisSize)
       } else if (parentHasDefiniteCross && alignment === C.ALIGN_STRETCH) {
-        // Stretch alignment with definite parent cross size - fill the cross axis
-        childCrossSize = crossAxisSize - crossMargin
+        // Stretch alignment with definite parent cross size - fill the line's cross axis
+        // For wrapping layouts, stretch to line cross size, not full container cross size
+        const lineCross =
+          numLines > 1 && childLineIdx < MAX_FLEX_LINES ? _lineCrossSizes[childLineIdx]! : crossAxisSize
+        childCrossSize = lineCross - crossMargin
       } else {
         // Non-stretch alignment or no definite cross size - shrink-wrap to content
         childCrossSize = NaN
@@ -1115,7 +1118,11 @@ function layoutNode(
       // For auto main size children, use flex-computed size if flexGrow > 0,
       // otherwise pass remaining available space for shrink-wrap behavior
       const mainDim = isRow ? childStyle.width : childStyle.height
-      const mainIsAutoChild = mainDim.unit === C.UNIT_AUTO || mainDim.unit === C.UNIT_UNDEFINED
+      // A child has definite main size if it has explicit width/height OR non-auto flexBasis
+      const hasDefiniteFlexBasis =
+        childStyle.flexBasis.unit === C.UNIT_POINT || childStyle.flexBasis.unit === C.UNIT_PERCENT
+      const mainIsAutoChild =
+        (mainDim.unit === C.UNIT_AUTO || mainDim.unit === C.UNIT_UNDEFINED) && !hasDefiniteFlexBasis
       const hasFlexGrow = cflex.flexGrow > 0
       // Use flex-computed mainSize for all cases - it includes padding/border as minimum
       // The flex algorithm already computed the proper size based on content/padding/border

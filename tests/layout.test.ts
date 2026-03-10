@@ -4,6 +4,7 @@ import {
   ALIGN_CENTER,
   ALIGN_FLEX_END,
   ALIGN_FLEX_START,
+  ALIGN_SPACE_AROUND,
   ALIGN_SPACE_BETWEEN,
   ALIGN_STRETCH,
   createDefaultStyle,
@@ -19,12 +20,17 @@ import {
   EDGE_START,
   EDGE_TOP,
   FLEX_DIRECTION_COLUMN,
+  FLEX_DIRECTION_COLUMN_REVERSE,
   FLEX_DIRECTION_ROW,
+  FLEX_DIRECTION_ROW_REVERSE,
   GUTTER_ALL,
+  GUTTER_COLUMN,
+  GUTTER_ROW,
   JUSTIFY_CENTER,
   JUSTIFY_FLEX_END,
   JUSTIFY_FLEX_START,
   JUSTIFY_SPACE_BETWEEN,
+  JUSTIFY_SPACE_EVENLY,
   MEASURE_MODE_AT_MOST,
   MEASURE_MODE_EXACTLY,
   Node,
@@ -36,6 +42,7 @@ import {
   UNIT_UNDEFINED,
   WRAP_NO_WRAP,
   WRAP_WRAP,
+  WRAP_WRAP_REVERSE,
 } from "../src/index.js"
 import { createChild, expectLayout, expectWidth } from "./test-utils.js"
 
@@ -1071,6 +1078,603 @@ describe("Flexily Layout Engine", () => {
       expectLayout(root.getChild(1), { top: 0 })
       expectLayout(root.getChild(2), { top: 5 })
       expectLayout(root.getChild(3), { top: 5 })
+      root.free()
+    })
+  })
+
+  // ==========================================================================
+  // Bug fixes: alignContent with non-measureFunc children
+  // ==========================================================================
+  describe("alignContent with fixed-size children", () => {
+    // Box width=2 height=6 flexWrap=wrap flexDirection=row, 4 children (1x1 each)
+    // Two lines: AB on line 0, CD on line 1. Each line has cross size 1.
+    // Total line cross = 2, free space = 4.
+
+    function makeTree(alignContent: number) {
+      const root = Node.create()
+      root.setWidth(2)
+      root.setHeight(6)
+      root.setFlexDirection(FLEX_DIRECTION_ROW)
+      root.setFlexWrap(WRAP_WRAP)
+      root.setAlignContent(alignContent)
+
+      for (let i = 0; i < 4; i++) {
+        const child = Node.create()
+        child.setWidth(1)
+        child.setHeight(1)
+        root.insertChild(child, i)
+      }
+
+      root.calculateLayout(2, 6, DIRECTION_LTR)
+      return root
+    }
+
+    it("flex-start: lines packed at start", () => {
+      const root = makeTree(ALIGN_FLEX_START)
+      expectLayout(root.getChild(0), { top: 0 })
+      expectLayout(root.getChild(1), { top: 0 })
+      expectLayout(root.getChild(2), { top: 1 })
+      expectLayout(root.getChild(3), { top: 1 })
+      root.free()
+    })
+
+    it("center: lines centered in cross axis", () => {
+      const root = makeTree(ALIGN_CENTER)
+      expectLayout(root.getChild(0), { top: 2 })
+      expectLayout(root.getChild(1), { top: 2 })
+      expectLayout(root.getChild(2), { top: 3 })
+      expectLayout(root.getChild(3), { top: 3 })
+      root.free()
+    })
+
+    it("flex-end: lines packed at end", () => {
+      const root = makeTree(ALIGN_FLEX_END)
+      expectLayout(root.getChild(0), { top: 4 })
+      expectLayout(root.getChild(1), { top: 4 })
+      expectLayout(root.getChild(2), { top: 5 })
+      expectLayout(root.getChild(3), { top: 5 })
+      root.free()
+    })
+
+    it("space-between: first line at start, last at end", () => {
+      const root = makeTree(ALIGN_SPACE_BETWEEN)
+      expectLayout(root.getChild(0), { top: 0 })
+      expectLayout(root.getChild(1), { top: 0 })
+      expectLayout(root.getChild(2), { top: 5 })
+      expectLayout(root.getChild(3), { top: 5 })
+      root.free()
+    })
+
+    it("space-around: equal space around each line", () => {
+      const root = makeTree(ALIGN_SPACE_AROUND)
+      // 2 lines of height 1, container=6, free space=4
+      // space-around: each line gets 2 units around it (4/2/2=1 half-gap per side)
+      // Line 0: offset = 1 (half-gap), Line 1: offset = 1 + 1 + 2 = 4
+      expectLayout(root.getChild(0), { top: 1 })
+      expectLayout(root.getChild(1), { top: 1 })
+      expectLayout(root.getChild(2), { top: 4 })
+      expectLayout(root.getChild(3), { top: 4 })
+      root.free()
+    })
+
+    it("stretch: lines stretched to fill cross axis (auto-height children)", () => {
+      // Use auto-height children so stretch actually affects them
+      const root = Node.create()
+      root.setWidth(2)
+      root.setHeight(6)
+      root.setFlexDirection(FLEX_DIRECTION_ROW)
+      root.setFlexWrap(WRAP_WRAP)
+      root.setAlignContent(ALIGN_STRETCH)
+
+      for (let i = 0; i < 4; i++) {
+        const child = Node.create()
+        child.setWidth(1)
+        // No explicit height - child should stretch
+        root.insertChild(child, i)
+      }
+
+      root.calculateLayout(2, 6, DIRECTION_LTR)
+
+      // 2 lines, each gets 3 units of cross space (6/2=3)
+      // Auto-height children stretch to fill their line's cross size
+      expectLayout(root.getChild(0), { top: 0, height: 3 })
+      expectLayout(root.getChild(1), { top: 0, height: 3 })
+      expectLayout(root.getChild(2), { top: 3, height: 3 })
+      expectLayout(root.getChild(3), { top: 3, height: 3 })
+      root.free()
+    })
+  })
+
+  describe("alignContent column direction", () => {
+    // Box width=6 height=2 flexWrap=wrap flexDirection=column, 4 children (1x1 each)
+    // Two lines: AC on line 0, BD on line 1. Each line has cross size 1.
+    // Total line cross = 2, free space = 4.
+
+    function makeTree(alignContent: number) {
+      const root = Node.create()
+      root.setWidth(6)
+      root.setHeight(2)
+      root.setFlexDirection(FLEX_DIRECTION_COLUMN)
+      root.setFlexWrap(WRAP_WRAP)
+      root.setAlignContent(alignContent)
+
+      for (let i = 0; i < 4; i++) {
+        const child = Node.create()
+        child.setWidth(1)
+        child.setHeight(1)
+        root.insertChild(child, i)
+      }
+
+      root.calculateLayout(6, 2, DIRECTION_LTR)
+      return root
+    }
+
+    it("center: lines centered in cross axis", () => {
+      const root = makeTree(ALIGN_CENTER)
+      expectLayout(root.getChild(0), { left: 2 })
+      expectLayout(root.getChild(1), { left: 2 })
+      expectLayout(root.getChild(2), { left: 3 })
+      expectLayout(root.getChild(3), { left: 3 })
+      root.free()
+    })
+
+    it("flex-end: lines packed at end", () => {
+      const root = makeTree(ALIGN_FLEX_END)
+      expectLayout(root.getChild(0), { left: 4 })
+      expectLayout(root.getChild(1), { left: 4 })
+      expectLayout(root.getChild(2), { left: 5 })
+      expectLayout(root.getChild(3), { left: 5 })
+      root.free()
+    })
+  })
+
+  // ==========================================================================
+  // Bug fixes: flexBasis
+  // ==========================================================================
+  describe("flexBasis", () => {
+    it("should apply flexBasis in row direction (px)", () => {
+      const root = Node.create()
+      root.setWidth(7)
+      root.setHeight(1)
+      root.setFlexDirection(FLEX_DIRECTION_ROW)
+
+      const child1 = Node.create()
+      child1.setFlexBasis(3)
+      child1.setMeasureFunc(() => ({ width: 1, height: 1 }))
+      root.insertChild(child1, 0)
+
+      const child2 = Node.create()
+      child2.setFlexBasis(3)
+      child2.setMeasureFunc(() => ({ width: 1, height: 1 }))
+      root.insertChild(child2, 1)
+
+      root.calculateLayout(7, 1, DIRECTION_LTR)
+
+      expectLayout(child1, { left: 0, width: 3 })
+      expectLayout(child2, { left: 3, width: 3 })
+      root.free()
+    })
+
+    it("should apply flexBasis in column direction (px)", () => {
+      const root = Node.create()
+      root.setWidth(1)
+      root.setHeight(7)
+      root.setFlexDirection(FLEX_DIRECTION_COLUMN)
+
+      const child1 = Node.create()
+      child1.setFlexBasis(3)
+      child1.setMeasureFunc(() => ({ width: 1, height: 1 }))
+      root.insertChild(child1, 0)
+
+      const child2 = Node.create()
+      child2.setFlexBasis(3)
+      child2.setMeasureFunc(() => ({ width: 1, height: 1 }))
+      root.insertChild(child2, 1)
+
+      root.calculateLayout(1, 7, DIRECTION_LTR)
+
+      expectLayout(child1, { top: 0, height: 3 })
+      expectLayout(child2, { top: 3, height: 3 })
+      root.free()
+    })
+
+    it("should apply flexBasis percent in row direction", () => {
+      const root = Node.create()
+      root.setWidth(100)
+      root.setHeight(10)
+      root.setFlexDirection(FLEX_DIRECTION_ROW)
+
+      const child1 = Node.create()
+      child1.setFlexBasisPercent(30)
+      root.insertChild(child1, 0)
+
+      const child2 = Node.create()
+      child2.setFlexBasisPercent(30)
+      root.insertChild(child2, 1)
+
+      root.calculateLayout(100, 10, DIRECTION_LTR)
+
+      expectLayout(child1, { left: 0, width: 30 })
+      expectLayout(child2, { left: 30, width: 30 })
+      root.free()
+    })
+
+    it("should apply flexBasis percent in column direction", () => {
+      const root = Node.create()
+      root.setWidth(10)
+      root.setHeight(100)
+      root.setFlexDirection(FLEX_DIRECTION_COLUMN)
+
+      const child1 = Node.create()
+      child1.setFlexBasisPercent(30)
+      root.insertChild(child1, 0)
+
+      const child2 = Node.create()
+      child2.setFlexBasisPercent(30)
+      root.insertChild(child2, 1)
+
+      root.calculateLayout(10, 100, DIRECTION_LTR)
+
+      expectLayout(child1, { top: 0, height: 30 })
+      expectLayout(child2, { top: 30, height: 30 })
+      root.free()
+    })
+  })
+
+  // ==========================================================================
+  // Bug fixes: flexWrap
+  // ==========================================================================
+  describe("flexWrap row bugs", () => {
+    it("should wrap row items correctly with measureFunc children", () => {
+      // Container width=2, three 1-wide children
+      // Should wrap: first line [A,B], second line [C]
+      const root = Node.create()
+      root.setWidth(2)
+      root.setHeight(3)
+      root.setFlexDirection(FLEX_DIRECTION_ROW)
+      root.setFlexWrap(WRAP_WRAP)
+
+      for (let i = 0; i < 3; i++) {
+        const child = Node.create()
+        child.setMeasureFunc(() => ({ width: 1, height: 1 }))
+        root.insertChild(child, i)
+      }
+
+      root.calculateLayout(2, 3, DIRECTION_LTR)
+
+      expectLayout(root.getChild(0), { left: 0, top: 0, width: 1, height: 1 })
+      expectLayout(root.getChild(1), { left: 1, top: 0, width: 1, height: 1 })
+      expectLayout(root.getChild(2), { left: 0, top: 1, width: 1, height: 1 })
+      root.free()
+    })
+
+    it("should wrap column items correctly", () => {
+      // Container height=2, three 1-tall children
+      // Should wrap: first line [A,B], second line [C]
+      const root = Node.create()
+      root.setWidth(3)
+      root.setHeight(2)
+      root.setFlexDirection(FLEX_DIRECTION_COLUMN)
+      root.setFlexWrap(WRAP_WRAP)
+
+      for (let i = 0; i < 3; i++) {
+        const child = Node.create()
+        child.setWidth(1)
+        child.setHeight(1)
+        root.insertChild(child, i)
+      }
+
+      root.calculateLayout(3, 2, DIRECTION_LTR)
+
+      expectLayout(root.getChild(0), { left: 0, top: 0 })
+      expectLayout(root.getChild(1), { left: 0, top: 1 })
+      expectLayout(root.getChild(2), { left: 1, top: 0 })
+      root.free()
+    })
+
+    it("should handle wrap-reverse in row direction", () => {
+      const root = Node.create()
+      root.setWidth(100)
+      root.setHeight(100)
+      root.setFlexDirection(FLEX_DIRECTION_ROW)
+      root.setFlexWrap(WRAP_WRAP_REVERSE)
+
+      const child1 = Node.create()
+      child1.setWidth(40)
+      child1.setHeight(20)
+      root.insertChild(child1, 0)
+
+      const child2 = Node.create()
+      child2.setWidth(40)
+      child2.setHeight(20)
+      root.insertChild(child2, 1)
+
+      const child3 = Node.create()
+      child3.setWidth(40)
+      child3.setHeight(20)
+      root.insertChild(child3, 2)
+
+      root.calculateLayout(100, 100, DIRECTION_LTR)
+
+      // wrap-reverse: first line at bottom, wrapped line above
+      // Line 0 (child1, child2): should be at bottom
+      // Line 1 (child3): should be above
+      expectLayout(child1, { left: 0, top: 80 })
+      expectLayout(child2, { left: 40, top: 80 })
+      expectLayout(child3, { left: 0, top: 60 })
+      root.free()
+    })
+
+    it("should handle wrap-reverse in column direction", () => {
+      const root = Node.create()
+      root.setWidth(100)
+      root.setHeight(100)
+      root.setFlexDirection(FLEX_DIRECTION_COLUMN)
+      root.setFlexWrap(WRAP_WRAP_REVERSE)
+
+      const child1 = Node.create()
+      child1.setWidth(20)
+      child1.setHeight(40)
+      root.insertChild(child1, 0)
+
+      const child2 = Node.create()
+      child2.setWidth(20)
+      child2.setHeight(40)
+      root.insertChild(child2, 1)
+
+      const child3 = Node.create()
+      child3.setWidth(20)
+      child3.setHeight(40)
+      root.insertChild(child3, 2)
+
+      root.calculateLayout(100, 100, DIRECTION_LTR)
+
+      // wrap-reverse column: first line at right, wrapped line to left
+      expectLayout(child1, { left: 80, top: 0 })
+      expectLayout(child2, { left: 80, top: 40 })
+      expectLayout(child3, { left: 60, top: 0 })
+      root.free()
+    })
+
+    it("should wrap row items with fixed-size children", () => {
+      const root = Node.create()
+      root.setWidth(2)
+      root.setHeight(3)
+      root.setFlexDirection(FLEX_DIRECTION_ROW)
+      root.setFlexWrap(WRAP_WRAP)
+
+      for (let i = 0; i < 3; i++) {
+        const child = Node.create()
+        child.setWidth(1)
+        child.setHeight(1)
+        root.insertChild(child, i)
+      }
+
+      root.calculateLayout(2, 3, DIRECTION_LTR)
+
+      expectLayout(root.getChild(0), { left: 0, top: 0 })
+      expectLayout(root.getChild(1), { left: 1, top: 0 })
+      expectLayout(root.getChild(2), { left: 0, top: 1 })
+      root.free()
+    })
+
+    it("should wrap with larger children", () => {
+      const root = Node.create()
+      root.setWidth(5)
+      root.setHeight(4)
+      root.setFlexDirection(FLEX_DIRECTION_ROW)
+      root.setFlexWrap(WRAP_WRAP)
+
+      const child1 = Node.create()
+      child1.setWidth(3)
+      child1.setHeight(2)
+      root.insertChild(child1, 0)
+
+      const child2 = Node.create()
+      child2.setWidth(3)
+      child2.setHeight(2)
+      root.insertChild(child2, 1)
+
+      root.calculateLayout(5, 4, DIRECTION_LTR)
+
+      // 3+3=6 > 5, so child2 wraps to next line
+      expectLayout(child1, { left: 0, top: 0, width: 3, height: 2 })
+      expectLayout(child2, { left: 0, top: 2, width: 3, height: 2 })
+      root.free()
+    })
+  })
+
+  // ==========================================================================
+  // Bug fixes: space-evenly off-by-one
+  // ==========================================================================
+  describe("justifyContent space-evenly", () => {
+    it("should distribute space evenly with rounding", () => {
+      // Container width=7, two 1-wide children
+      // Free space = 5, divided among 3 gaps (before, between, after) = 5/3 ≈ 1.667
+      // Yoga rounds: child1 at x=2, child2 at x=5
+      const root = Node.create()
+      root.setWidth(7)
+      root.setHeight(1)
+      root.setFlexDirection(FLEX_DIRECTION_ROW)
+      root.setJustifyContent(JUSTIFY_SPACE_EVENLY)
+
+      const child1 = Node.create()
+      child1.setWidth(1)
+      child1.setHeight(1)
+      root.insertChild(child1, 0)
+
+      const child2 = Node.create()
+      child2.setWidth(1)
+      child2.setHeight(1)
+      root.insertChild(child2, 1)
+
+      root.calculateLayout(7, 1, DIRECTION_LTR)
+
+      expectLayout(child1, { left: 2 })
+      expectLayout(child2, { left: 4 })
+      root.free()
+    })
+  })
+
+  // ==========================================================================
+  // Bug fixes: baseline alignment with alignSelf
+  // ==========================================================================
+  describe("baseline alignment edge cases", () => {
+    it("should align to baseline correctly with mixed heights and alignSelf", () => {
+      const root = Node.create()
+      root.setWidth(100)
+      root.setHeight(50)
+      root.setFlexDirection(FLEX_DIRECTION_ROW)
+      // Default alignItems is stretch, individual children use alignSelf=baseline
+
+      const child1 = Node.create()
+      child1.setWidth(30)
+      child1.setHeight(10)
+      child1.setAlignSelf(ALIGN_BASELINE)
+      root.insertChild(child1, 0)
+
+      const child2 = Node.create()
+      child2.setWidth(30)
+      child2.setHeight(20)
+      child2.setAlignSelf(ALIGN_BASELINE)
+      root.insertChild(child2, 1)
+
+      root.calculateLayout(100, 50, DIRECTION_LTR)
+
+      // Without baselineFunc, baseline = bottom of element
+      // Max baseline = 20 (child2), so child1 shifts down by 10
+      expectLayout(child1, { top: 10 })
+      expectLayout(child2, { top: 0 })
+      root.free()
+    })
+  })
+
+  // ==========================================================================
+  // Bug fixes: gap combined (row + column)
+  // ==========================================================================
+  describe("gap combined", () => {
+    it("should apply both row and column gap in wrapping row layout", () => {
+      // Row container with wrap, gap=1 in both directions
+      // Two 1x1 children on first line, one 1x1 child wrapping to second line
+      const root = Node.create()
+      root.setWidth(3)
+      root.setHeight(5)
+      root.setFlexDirection(FLEX_DIRECTION_ROW)
+      root.setFlexWrap(WRAP_WRAP)
+      root.setGap(GUTTER_ALL, 1)
+
+      const child1 = Node.create()
+      child1.setWidth(1)
+      child1.setHeight(1)
+      root.insertChild(child1, 0)
+
+      const child2 = Node.create()
+      child2.setWidth(1)
+      child2.setHeight(1)
+      root.insertChild(child2, 1)
+
+      const child3 = Node.create()
+      child3.setWidth(1)
+      child3.setHeight(1)
+      root.insertChild(child3, 2)
+
+      root.calculateLayout(3, 5, DIRECTION_LTR)
+
+      // First line: A at 0, B at 2 (1 gap between A and B)
+      // Second line: C at top=2 (1 cross gap between lines: height of line 0 is 1, gap is 1, so 1+1=2)
+      expectLayout(child1, { left: 0, top: 0 })
+      expectLayout(child2, { left: 2, top: 0 })
+      expectLayout(child3, { left: 0, top: 2 })
+      root.free()
+    })
+
+    it("should apply column gap in wrapping column layout", () => {
+      const root = Node.create()
+      root.setWidth(5)
+      root.setHeight(3)
+      root.setFlexDirection(FLEX_DIRECTION_COLUMN)
+      root.setFlexWrap(WRAP_WRAP)
+      root.setGap(GUTTER_ALL, 1)
+
+      const child1 = Node.create()
+      child1.setWidth(1)
+      child1.setHeight(1)
+      root.insertChild(child1, 0)
+
+      const child2 = Node.create()
+      child2.setWidth(1)
+      child2.setHeight(1)
+      root.insertChild(child2, 1)
+
+      const child3 = Node.create()
+      child3.setWidth(1)
+      child3.setHeight(1)
+      root.insertChild(child3, 2)
+
+      root.calculateLayout(5, 3, DIRECTION_LTR)
+
+      // First line (column): A at top=0, B at top=2 (1 gap)
+      // A wraps to height=3, so B should be at top=2 (1+1gap). But 1+1=2 < 3, fits.
+      // Wait: children are 1x1. Container height=3. First line: A(0), B(1+1gap=2). Fits.
+      // C wraps to next line (column). Next line left = 1 (first line width) + 1 (cross gap) = 2
+      expectLayout(child1, { left: 0, top: 0 })
+      expectLayout(child2, { left: 0, top: 2 })
+      expectLayout(child3, { left: 2, top: 0 })
+      root.free()
+    })
+  })
+
+  // ==========================================================================
+  // Bug fixes: min/max sizing edge cases
+  // ==========================================================================
+  describe("min/max sizing edge cases", () => {
+    it("should respect minWidth percent", () => {
+      const root = Node.create()
+      root.setWidth(100)
+      root.setHeight(50)
+      root.setFlexDirection(FLEX_DIRECTION_ROW)
+
+      const child = Node.create()
+      child.setMinWidthPercent(50)
+      root.insertChild(child, 0)
+
+      root.calculateLayout(100, 50, DIRECTION_LTR)
+
+      expect(child.getComputedWidth()).toBeGreaterThanOrEqual(50)
+      root.free()
+    })
+
+    it("should respect maxWidth percent", () => {
+      const root = Node.create()
+      root.setWidth(100)
+      root.setHeight(50)
+      root.setFlexDirection(FLEX_DIRECTION_ROW)
+
+      const child = Node.create()
+      child.setFlexGrow(1)
+      child.setMaxWidthPercent(30)
+      root.insertChild(child, 0)
+
+      root.calculateLayout(100, 50, DIRECTION_LTR)
+
+      expect(child.getComputedWidth()).toBeLessThanOrEqual(30)
+      root.free()
+    })
+
+    it("should respect maxHeight percent", () => {
+      const root = Node.create()
+      root.setWidth(50)
+      root.setHeight(100)
+      root.setFlexDirection(FLEX_DIRECTION_COLUMN)
+
+      const child = Node.create()
+      child.setFlexGrow(1)
+      child.setMaxHeightPercent(30)
+      root.insertChild(child, 0)
+
+      root.calculateLayout(50, 100, DIRECTION_LTR)
+
+      expect(child.getComputedHeight()).toBeLessThanOrEqual(30)
       root.free()
     })
   })
