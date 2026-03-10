@@ -827,16 +827,31 @@ function layoutNode(
           childCross = crossDim.value
         } else if (crossDim.unit === C.UNIT_PERCENT && !Number.isNaN(crossAxisSize)) {
           childCross = crossAxisSize * (crossDim.value / 100)
-        } else {
-          // Auto - use a default or measure. For now, use 0 and let stretch handle it.
-          childCross = 0
+        } else if (child.hasMeasureFunc()) {
+          // Auto-sized with measureFunc: get tentative cross size from cached measure.
+          // Phase 5 already called cachedMeasure, so this is typically a cache hit (no alloc).
+          const crossMargin = crossMarginStart + crossMarginEnd
+          const availCross = Number.isNaN(crossAxisSize) ? Infinity : crossAxisSize - crossMargin
+          const mW = isRow ? mainAxisSize : availCross
+          const mH = isRow ? availCross : mainAxisSize
+          const mWMode = Number.isNaN(mW) ? C.MEASURE_MODE_UNDEFINED : C.MEASURE_MODE_AT_MOST
+          const mHMode = Number.isNaN(mH) ? C.MEASURE_MODE_UNDEFINED : C.MEASURE_MODE_AT_MOST
+          const measured = child.cachedMeasure(
+            Number.isNaN(mW) ? Infinity : mW,
+            mWMode,
+            Number.isNaN(mH) ? Infinity : mH,
+            mHMode,
+          )
+          if (measured) {
+            childCross = isRow ? measured.height : measured.width
+          }
         }
         maxLineCross = Math.max(maxLineCross, childCross + crossMarginStart + crossMarginEnd)
       }
-      // Fallback cross size: use measured max, or divide available space among lines
-      // Guard against NaN/division-by-zero: if crossAxisSize is NaN or numLines is 0, use 0
-      const fallbackCross = numLines > 0 && !Number.isNaN(crossAxisSize) ? crossAxisSize / numLines : 0
-      const lineCrossSize = maxLineCross > 0 ? maxLineCross : fallbackCross
+      // Use measured max cross size. If all children are auto-sized (maxLineCross === 0),
+      // use 0 — NOT crossAxisSize/numLines, which would consume all free space and
+      // prevent alignContent from distributing it. Actual sizes are computed in Phase 8.
+      const lineCrossSize = maxLineCross
       _lineCrossSizes[lineIdx] = lineCrossSize
       cumulativeCrossOffset += lineCrossSize + crossGap
     }

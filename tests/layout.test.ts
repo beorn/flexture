@@ -4,6 +4,7 @@ import {
   ALIGN_CENTER,
   ALIGN_FLEX_END,
   ALIGN_FLEX_START,
+  ALIGN_SPACE_BETWEEN,
   ALIGN_STRETCH,
   createDefaultStyle,
   createValue,
@@ -1010,6 +1011,66 @@ describe("Flexily Layout Engine", () => {
       root.calculateLayout(100, 50, DIRECTION_RTL)
       expectLayout(child, { left: 60 })
 
+      root.free()
+    })
+  })
+
+  describe("alignContent with measureFunc children", () => {
+    // Box width=2 height=6 flexWrap=wrap flexDirection=row, 4 text children (1x1 each)
+    // Two lines: AB on line 0, CD on line 1. Each line has cross size 1.
+    // Total line cross = 2, free space = 4.
+
+    function makeTree(alignContent: number) {
+      const root = Node.create()
+      root.setWidth(2)
+      root.setHeight(6)
+      root.setFlexDirection(FLEX_DIRECTION_ROW)
+      root.setFlexWrap(WRAP_WRAP)
+      root.setAlignContent(alignContent)
+
+      for (let i = 0; i < 4; i++) {
+        const child = Node.create()
+        child.setMeasureFunc(() => ({ width: 1, height: 1 }))
+        root.insertChild(child, i)
+      }
+
+      root.calculateLayout(2, 6, DIRECTION_LTR)
+      return root
+    }
+
+    it("flex-start: lines packed at start", () => {
+      const root = makeTree(ALIGN_FLEX_START)
+      expectLayout(root.getChild(0), { top: 0 })
+      expectLayout(root.getChild(1), { top: 0 })
+      expectLayout(root.getChild(2), { top: 1 })
+      expectLayout(root.getChild(3), { top: 1 })
+      root.free()
+    })
+
+    it("center: lines centered in cross axis", () => {
+      const root = makeTree(ALIGN_CENTER)
+      expectLayout(root.getChild(0), { top: 2 })
+      expectLayout(root.getChild(1), { top: 2 })
+      expectLayout(root.getChild(2), { top: 3 })
+      expectLayout(root.getChild(3), { top: 3 })
+      root.free()
+    })
+
+    it("flex-end: lines packed at end", () => {
+      const root = makeTree(ALIGN_FLEX_END)
+      expectLayout(root.getChild(0), { top: 4 })
+      expectLayout(root.getChild(1), { top: 4 })
+      expectLayout(root.getChild(2), { top: 5 })
+      expectLayout(root.getChild(3), { top: 5 })
+      root.free()
+    })
+
+    it("space-between: first line at start, last at end", () => {
+      const root = makeTree(ALIGN_SPACE_BETWEEN)
+      expectLayout(root.getChild(0), { top: 0 })
+      expectLayout(root.getChild(1), { top: 0 })
+      expectLayout(root.getChild(2), { top: 5 })
+      expectLayout(root.getChild(3), { top: 5 })
       root.free()
     })
   })
