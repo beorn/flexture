@@ -1501,10 +1501,13 @@ function layoutNode(
       }
 
       if (crossOffset > 0) {
+        // Yoga 3.x quirk: measureFunc leaf nodes use Math.floor for cross-axis alignment
+        // offset, matching the main-axis floor rounding behavior
+        const crossRound = shouldMeasure ? Math.floor : Math.round
         if (isRow) {
-          child.layout.top += Math.round(crossOffset)
+          child.layout.top += crossRound(crossOffset)
         } else {
-          child.layout.left += Math.round(crossOffset)
+          child.layout.left += crossRound(crossOffset)
         }
       }
 
