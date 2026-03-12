@@ -17,7 +17,15 @@ import { createLogger } from "loggily"
 
 const log = createLogger("flexily:test:fuzz")
 import * as Flexily from "../src/index.js"
-import initYoga, { type Yoga, type Node as YogaNode, type FlexDirection, type Justify, type Align } from "yoga-wasm-web"
+import initYoga, {
+  type Yoga,
+  type Node as YogaNode,
+  type FlexDirection,
+  type Justify,
+  type Align,
+  type PositionType,
+  type Edge,
+} from "yoga-wasm-web"
 import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -164,6 +172,8 @@ interface NodeStyle {
   padding?: number
   margin?: number
   gap?: number
+  positionType?: number
+  positionEdges?: { edge: number; value: number }[]
 }
 
 interface TreeSpec {
@@ -174,6 +184,52 @@ interface TreeSpec {
 // ============================================================================
 // Simple Random Tree Generation (for matching tests)
 // ============================================================================
+
+/**
+ * Generate a random absolute-positioned child style.
+ * Absolute children are taken out of flow and positioned relative to the parent's padding box.
+ */
+function generateAbsoluteChildStyle(ctx: RandomContext, parentWidth: number, parentHeight: number): NodeStyle {
+  const style: NodeStyle = {
+    positionType: Flexily.POSITION_TYPE_ABSOLUTE,
+  }
+
+  // Absolute children typically have explicit dimensions
+  if (randomBool(ctx, 0.8)) {
+    style.width = randomInt(ctx, 10, Math.floor(parentWidth / 2))
+  }
+  if (randomBool(ctx, 0.8)) {
+    style.height = randomInt(ctx, 10, Math.floor(parentHeight / 2))
+  }
+
+  // Random position edges (top/left/right/bottom)
+  const edges: { edge: number; value: number }[] = []
+  if (randomBool(ctx, 0.6)) {
+    edges.push({ edge: Flexily.EDGE_LEFT, value: randomInt(ctx, 0, Math.floor(parentWidth / 3)) })
+  }
+  if (randomBool(ctx, 0.6)) {
+    edges.push({ edge: Flexily.EDGE_TOP, value: randomInt(ctx, 0, Math.floor(parentHeight / 3)) })
+  }
+  // Only add right if left is not set (to avoid over-constraining)
+  if (edges.length === 0 || (randomBool(ctx, 0.3) && !edges.some((e) => e.edge === Flexily.EDGE_LEFT))) {
+    edges.push({ edge: Flexily.EDGE_RIGHT, value: randomInt(ctx, 0, Math.floor(parentWidth / 3)) })
+  }
+  // Only add bottom if top is not set
+  if (randomBool(ctx, 0.3) && !edges.some((e) => e.edge === Flexily.EDGE_TOP)) {
+    edges.push({ edge: Flexily.EDGE_BOTTOM, value: randomInt(ctx, 0, Math.floor(parentHeight / 3)) })
+  }
+
+  if (edges.length > 0) {
+    style.positionEdges = edges
+  }
+
+  // Optional margin on absolute children
+  if (randomBool(ctx, 0.2)) {
+    style.margin = randomInt(ctx, 1, 5)
+  }
+
+  return style
+}
 
 /**
  * Generates simple, flat layouts that should always match between Flexily and Yoga.
@@ -309,6 +365,12 @@ function applyStyleToFlexilyNode(node: Flexily.Node, style: NodeStyle): void {
   }
   if (style.margin !== undefined) node.setMargin(Flexily.EDGE_ALL, style.margin)
   if (style.gap !== undefined) node.setGap(Flexily.GUTTER_ALL, style.gap)
+  if (style.positionType !== undefined) node.setPositionType(style.positionType)
+  if (style.positionEdges !== undefined) {
+    for (const { edge, value } of style.positionEdges) {
+      node.setPosition(edge, value)
+    }
+  }
 }
 
 function applyStyleToYogaNode(node: YogaNode, style: NodeStyle): void {
@@ -328,6 +390,12 @@ function applyStyleToYogaNode(node: YogaNode, style: NodeStyle): void {
   if (style.padding !== undefined) node.setPadding(yoga.EDGE_ALL, style.padding)
   if (style.margin !== undefined) node.setMargin(yoga.EDGE_ALL, style.margin)
   if (style.gap !== undefined) node.setGap(yoga.GUTTER_ALL, style.gap)
+  if (style.positionType !== undefined) node.setPositionType(style.positionType as PositionType)
+  if (style.positionEdges !== undefined) {
+    for (const { edge, value } of style.positionEdges) {
+      node.setPosition(edge as Edge, value)
+    }
+  }
 }
 
 function buildFlexilyTree(spec: TreeSpec): Flexily.Node {
@@ -636,6 +704,107 @@ describe("Fuzz: Dashboard Layouts", () => {
 })
 
 // ============================================================================
+// Tests: Absolute Positioning Layouts
+// ============================================================================
+
+describe("Fuzz: Absolute Positioning", () => {
+  /**
+   * Generates layouts focused on absolute positioning scenarios:
+   * - Mix of relative and absolute children
+   * - Absolute children with various edge combinations
+   * - Nested absolute children
+   */
+  function generateAbsoluteTree(ctx: RandomContext): TreeSpec {
+    const rootWidth = randomInt(ctx, 200, 500)
+    const rootHeight = randomInt(ctx, 150, 400)
+    const flexDirection = randomChoice(ctx, [Flexily.FLEX_DIRECTION_ROW, Flexily.FLEX_DIRECTION_COLUMN])
+
+    const children: TreeSpec[] = []
+
+    // 2-4 relative children
+    const relCount = randomInt(ctx, 2, 4)
+    for (let i = 0; i < relCount; i++) {
+      children.push({
+        style: {
+          flexGrow: randomBool(ctx, 0.5) ? randomInt(ctx, 1, 3) : undefined,
+          width: randomBool(ctx, 0.5) ? randomInt(ctx, 20, 60) : undefined,
+          height: randomBool(ctx, 0.5) ? randomInt(ctx, 20, 60) : undefined,
+          padding: randomBool(ctx, 0.3) ? randomInt(ctx, 1, 5) : undefined,
+        },
+        children: [],
+      })
+    }
+
+    // 1-3 absolute children
+    const absCount = randomInt(ctx, 1, 3)
+    for (let i = 0; i < absCount; i++) {
+      const absChild: TreeSpec = {
+        style: generateAbsoluteChildStyle(ctx, rootWidth, rootHeight),
+        children: [],
+      }
+
+      // Optionally give the absolute child its own children (nested layout)
+      if (randomBool(ctx, 0.3)) {
+        const nestedCount = randomInt(ctx, 1, 3)
+        for (let j = 0; j < nestedCount; j++) {
+          absChild.children.push({
+            style: {
+              flexGrow: 1,
+              padding: randomBool(ctx, 0.2) ? randomInt(ctx, 1, 3) : undefined,
+            },
+            children: [],
+          })
+        }
+        // Nested absolute needs a flex direction for its children
+        absChild.style.flexDirection = randomChoice(ctx, [Flexily.FLEX_DIRECTION_ROW, Flexily.FLEX_DIRECTION_COLUMN])
+      }
+
+      children.push(absChild)
+    }
+
+    return {
+      style: {
+        width: rootWidth,
+        height: rootHeight,
+        flexDirection,
+        padding: randomBool(ctx, 0.4) ? randomInt(ctx, 5, 15) : undefined,
+        gap: randomBool(ctx, 0.3) ? randomInt(ctx, 2, 8) : undefined,
+      },
+      children,
+    }
+  }
+
+  function runAbsoluteTest(seed: number): { passed: boolean; diff?: string } {
+    const rng = createRng(seed)
+    const ctx: RandomContext = { rng }
+    const spec = generateAbsoluteTree(ctx)
+
+    const flexilyRoot = buildFlexilyTree(spec)
+    const yogaRoot = buildYogaTree(spec)
+
+    const rootWidth = spec.style.width ?? 300
+    const rootHeight = spec.style.height ?? 200
+
+    flexilyRoot.calculateLayout(rootWidth, rootHeight, Flexily.DIRECTION_LTR)
+    yogaRoot.calculateLayout(rootWidth, rootHeight, yoga.DIRECTION_LTR)
+
+    const flexilyLayout = getFlexilyLayout(flexilyRoot)
+    const yogaLayout = getYogaLayout(yogaRoot)
+    yogaRoot.freeRecursive()
+
+    const result = layoutsMatch(flexilyLayout, yogaLayout)
+    return { passed: result.match, diff: result.diff }
+  }
+
+  for (let seed = 9000; seed < 9050; seed++) {
+    it(`seed=${seed}`, () => {
+      const result = runAbsoluteTest(seed)
+      expect(result.passed).toBe(true)
+    })
+  }
+})
+
+// ============================================================================
 // Tests: Stress Test - Many Random Seeds
 // ============================================================================
 
@@ -669,7 +838,7 @@ describe("Fuzz: Stress Test (50 Nested)", () => {
 describe("Differential Fuzz Summary", () => {
   it("prints summary", () => {
     log.debug?.(
-      `\n${"=".repeat(60)}\nDIFFERENTIAL FUZZ TEST SUMMARY\n${"=".repeat(60)}\n\nThese tests generate random flexbox trees and compare Flexily vs Yoga.\nUse seed values to reproduce any failing cases.\n\nTest categories:\n- Simple Flat: Single level with fixed/flex children\n- Nested: Two-level layouts with flexGrow\n- Kanban: Column-based card layouts (TUI pattern)\n- Dashboard: Header + sidebar + content (TUI pattern)\n- Stress: Many random seeds for broad coverage\n\nTolerance: ${EPSILON}px (for rounding differences)\n\n${"=".repeat(60)}`,
+      `\n${"=".repeat(60)}\nDIFFERENTIAL FUZZ TEST SUMMARY\n${"=".repeat(60)}\n\nThese tests generate random flexbox trees and compare Flexily vs Yoga.\nUse seed values to reproduce any failing cases.\n\nTest categories:\n- Simple Flat: Single level with fixed/flex children\n- Nested: Two-level layouts with flexGrow\n- Kanban: Column-based card layouts (TUI pattern)\n- Dashboard: Header + sidebar + content (TUI pattern)\n- Absolute: Mixed relative + absolute positioned children\n- Stress: Many random seeds for broad coverage\n\nTolerance: ${EPSILON}px (for rounding differences)\n\n${"=".repeat(60)}`,
     )
   })
 })
