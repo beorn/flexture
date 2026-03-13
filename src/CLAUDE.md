@@ -218,6 +218,8 @@ interface FlexInfo {
   lastAvailH
   lastOffsetX
   lastOffsetY
+  lastAbsX
+  lastAbsY
   lastDir
   layoutValid
 }
@@ -275,11 +277,15 @@ flex.lastAvailW = availableWidth
 flex.lastAvailH = availableHeight
 flex.lastOffsetX = offsetX
 flex.lastOffsetY = offsetY
+flex.lastAbsX = absX
+flex.lastAbsY = absY
 flex.lastDir = direction
 flex.layoutValid = true
 ```
 
 On next call, if `layoutValid && !isDirty && same constraints`, the entire subtree is skipped. Only position delta is propagated (if offset changed).
+
+**`absX`/`absY` must be fingerprinted** because edge-based rounding depends on absolute position: `width = round(absX + nodeWidth) - round(absX)`. A fractional shift in absX (e.g., from a sibling's width change) changes the rounded result even when availW/availH/direction are unchanged.
 
 **`Object.is()` is required** for NaN-safe comparison. `NaN === NaN` is `false`; `Object.is(NaN, NaN)` is `true`. NaN represents "unconstrained" -- a legitimate and common constraint value.
 

@@ -126,6 +126,10 @@ export interface FlexInfo {
   lastOffsetX: number
   /** Last offsetY passed to layoutNode */
   lastOffsetY: number
+  /** Last absX passed to layoutNode (affects edge-based rounding) */
+  lastAbsX: number
+  /** Last absY passed to layoutNode (affects edge-based rounding) */
+  lastAbsY: number
   /** Whether cached layout is valid (fingerprint matched, not dirty) */
   layoutValid: boolean
   /** Last direction passed to layoutNode */

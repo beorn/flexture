@@ -217,6 +217,152 @@ describe("trace: all declared event types are emitted", () => {
 // Documented API methods are missing: freeRecursive, computed getters
 // =============================================================================
 
+// =============================================================================
+// Bug 7: km-flexily.auto-cross-nan
+// Cross-axis alignment in auto-sized containers produces NaN offsets.
+// When parent cross size is NaN (auto), availableCrossSpace becomes NaN,
+// so ALIGN_CENTER, ALIGN_FLEX_END, and cross-axis auto margins compute NaN
+// offsets. Phase 9b only revisits ALIGN_STRETCH, not center/flex-end.
+// =============================================================================
+
+describe("auto cross-axis NaN alignment", () => {
+  test("row with height:auto and alignItems:center — child should be centered", () => {
+    // Row container with auto height and alignItems:center
+    // Two children: one tall (10), one short (4)
+    // After shrink-wrap, row height = 10 (tallest child)
+    // Short child should be centered: top = (10 - 4) / 2 = 3
+    const root = Node.create()
+    root.setWidth(100)
+    root.setHeight(100)
+    root.setAlignItems(C.ALIGN_FLEX_START) // prevent stretch of row
+
+    const row = Node.create()
+    row.setFlexDirection(FLEX_DIRECTION_ROW)
+    row.setAlignItems(C.ALIGN_CENTER)
+    // height is auto (NaN) — this triggers the bug
+    root.insertChild(row, 0)
+
+    const tallChild = Node.create()
+    tallChild.setWidth(30)
+    tallChild.setHeight(10)
+    row.insertChild(tallChild, 0)
+
+    const shortChild = Node.create()
+    shortChild.setWidth(30)
+    shortChild.setHeight(4)
+    row.insertChild(shortChild, 1)
+
+    root.calculateLayout(100, 100, DIRECTION_LTR)
+
+    // Row should shrink-wrap to tallest child
+    expect(row.getComputedHeight()).toBe(10)
+
+    // Tall child: top should be 0 (fills the row)
+    expect(tallChild.getComputedTop()).toBe(0)
+    // BUG: shortChild.getComputedTop() returns NaN instead of 3
+    const shortTop = shortChild.getComputedTop()
+    expect(Number.isNaN(shortTop)).toBe(false) // Must not be NaN
+    expect(shortTop).toBe(3) // centered: (10 - 4) / 2 = 3
+  })
+
+  test("row with height:auto and alignItems:flex-end — child should be at bottom", () => {
+    const root = Node.create()
+    root.setWidth(100)
+    root.setHeight(100)
+    root.setAlignItems(C.ALIGN_FLEX_START) // prevent stretch of row
+
+    const row = Node.create()
+    row.setFlexDirection(FLEX_DIRECTION_ROW)
+    row.setAlignItems(C.ALIGN_FLEX_END)
+    // height is auto (NaN)
+    root.insertChild(row, 0)
+
+    const tallChild = Node.create()
+    tallChild.setWidth(30)
+    tallChild.setHeight(10)
+    row.insertChild(tallChild, 0)
+
+    const shortChild = Node.create()
+    shortChild.setWidth(30)
+    shortChild.setHeight(4)
+    row.insertChild(shortChild, 1)
+
+    root.calculateLayout(100, 100, DIRECTION_LTR)
+
+    expect(row.getComputedHeight()).toBe(10)
+    // Short child should be at bottom: top = 10 - 4 = 6
+    const shortTop = shortChild.getComputedTop()
+    expect(Number.isNaN(shortTop)).toBe(false)
+    expect(shortTop).toBe(6)
+  })
+
+  test("column with width:auto and alignItems:center — child should be centered", () => {
+    const root = Node.create()
+    root.setWidth(100)
+    root.setHeight(100)
+    root.setFlexDirection(FLEX_DIRECTION_ROW)
+    root.setAlignItems(C.ALIGN_FLEX_START) // prevent stretch of col
+
+    const col = Node.create()
+    col.setFlexDirection(FLEX_DIRECTION_COLUMN)
+    col.setAlignItems(C.ALIGN_CENTER)
+    // width is auto (NaN)
+    root.insertChild(col, 0)
+
+    const wideChild = Node.create()
+    wideChild.setWidth(40)
+    wideChild.setHeight(10)
+    col.insertChild(wideChild, 0)
+
+    const narrowChild = Node.create()
+    narrowChild.setWidth(20)
+    narrowChild.setHeight(10)
+    col.insertChild(narrowChild, 1)
+
+    root.calculateLayout(100, 100, DIRECTION_LTR)
+
+    // Column should shrink-wrap to widest child
+    expect(col.getComputedWidth()).toBe(40)
+
+    // Narrow child should be centered: left = (40 - 20) / 2 = 10
+    const narrowLeft = narrowChild.getComputedLeft()
+    expect(Number.isNaN(narrowLeft)).toBe(false)
+    expect(narrowLeft).toBe(10)
+  })
+
+  test("row with height:auto and auto cross margins — child should be centered", () => {
+    const root = Node.create()
+    root.setWidth(100)
+    root.setHeight(100)
+    root.setAlignItems(C.ALIGN_FLEX_START) // prevent stretch of row
+
+    const row = Node.create()
+    row.setFlexDirection(FLEX_DIRECTION_ROW)
+    // No alignItems set (default stretch), but auto margins override
+    root.insertChild(row, 0)
+
+    const tallChild = Node.create()
+    tallChild.setWidth(30)
+    tallChild.setHeight(10)
+    row.insertChild(tallChild, 0)
+
+    const shortChild = Node.create()
+    shortChild.setWidth(30)
+    shortChild.setHeight(4)
+    // Auto margins on cross axis (top and bottom) — should center
+    shortChild.setMarginAuto(C.EDGE_TOP)
+    shortChild.setMarginAuto(C.EDGE_BOTTOM)
+    row.insertChild(shortChild, 1)
+
+    root.calculateLayout(100, 100, DIRECTION_LTR)
+
+    expect(row.getComputedHeight()).toBe(10)
+    const shortTop = shortChild.getComputedTop()
+    expect(Number.isNaN(shortTop)).toBe(false)
+    expect(shortTop).toBe(3) // centered via auto margins: (10 - 4) / 2 = 3
+  })
+})
+
 describe("missing API methods", () => {
   test("freeRecursive() exists and frees entire tree", () => {
     const root = Node.create()

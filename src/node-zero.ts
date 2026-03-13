@@ -104,6 +104,8 @@ export class Node {
     lastAvailH: NaN,
     lastOffsetX: NaN,
     lastOffsetY: NaN,
+    lastAbsX: NaN,
+    lastAbsY: NaN,
     layoutValid: false,
     lastDir: 0,
   }

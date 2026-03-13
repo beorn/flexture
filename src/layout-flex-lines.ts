@@ -4,8 +4,9 @@
  * Pre-allocated arrays for zero-allocation flex-wrap layout,
  * plus the line-breaking and flex-distribution algorithms.
  *
- * IMPORTANT: Module-level pre-allocated arrays are NOT reentrant.
- * Layout is single-threaded; concurrent calculateLayout() calls corrupt shared state.
+ * Re-entrancy: A user measureFunc or baselineFunc may synchronously call
+ * calculateLayout() on a separate tree. saveLineState/restoreLineState
+ * bracket such nested calls to protect the outer pass's scratch arrays.
  */
 
 import * as C from "./constants.js"
@@ -87,6 +88,69 @@ export function growLineArrays(needed: number): void {
   while (_lineChildren.length < newSize) {
     _lineChildren.push([])
   }
+}
+
+// ============================================================================
+// Re-entrancy Support
+// ============================================================================
+// When a measureFunc/baselineFunc synchronously calls calculateLayout() on
+// another tree, we must save and restore the module-level scratch arrays so
+// the outer pass resumes with its own data intact.
+
+/**
+ * Saved snapshot of all module-level line arrays.
+ * Allocated only on re-entrant calls (depth > 0).
+ */
+export interface LineStateSave {
+  crossSizes: Float64Array<ArrayBuffer>
+  crossOffsets: Float64Array<ArrayBuffer>
+  lengths: Uint16Array<ArrayBuffer>
+  justifyStarts: Float64Array<ArrayBuffer>
+  itemSpacings: Float64Array<ArrayBuffer>
+  children: Node[][]
+  maxLines: number
+}
+
+/** Current re-entrancy depth. 0 = outermost (no save needed). */
+let _layoutDepth = 0
+
+/**
+ * Enter a layout pass. If re-entrant (depth > 0), saves current line state.
+ * @returns The saved state (to pass to restoreLineState), or null at depth 0.
+ */
+export function enterLayout(): LineStateSave | null {
+  const depth = _layoutDepth++
+  if (depth === 0) return null // Outermost — no save needed
+
+  // Save current state (allocates only on re-entrant calls — rare)
+  const saved: LineStateSave = {
+    crossSizes: _lineCrossSizes.slice(),
+    crossOffsets: _lineCrossOffsets.slice(),
+    lengths: _lineLengths.slice(),
+    justifyStarts: _lineJustifyStarts.slice(),
+    itemSpacings: _lineItemSpacings.slice(),
+    children: _lineChildren.map((arr) => arr.slice()),
+    maxLines: MAX_FLEX_LINES,
+  }
+  return saved
+}
+
+/**
+ * Exit a layout pass. If re-entrant, restores saved line state.
+ * @param saved - The state returned by enterLayout (null at depth 0).
+ */
+export function exitLayout(saved: LineStateSave | null): void {
+  _layoutDepth--
+  if (!saved) return // Outermost — nothing to restore
+
+  // Restore saved state
+  MAX_FLEX_LINES = saved.maxLines
+  _lineCrossSizes = saved.crossSizes
+  _lineCrossOffsets = saved.crossOffsets
+  _lineLengths = saved.lengths
+  _lineJustifyStarts = saved.justifyStarts
+  _lineItemSpacings = saved.itemSpacings
+  _lineChildren = saved.children
 }
 
 /**

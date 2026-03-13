@@ -73,6 +73,8 @@ import {
   _lineItemSpacings,
   breakIntoLines,
   distributeFlexSpaceForLine,
+  enterLayout,
+  exitLayout,
 } from "./layout-flex-lines.js"
 
 /**
@@ -84,12 +86,19 @@ export function computeLayout(
   availableHeight: number,
   direction: number = C.DIRECTION_LTR,
 ): void {
-  resetLayoutStats()
-  getTrace()?.resetCounter()
-  // Clear layout cache from previous pass (important for correct layout after tree changes)
-  root.resetLayoutCache()
-  // Pass absolute position (0,0) for root node - used for Yoga-compatible edge rounding
-  layoutNode(root, availableWidth, availableHeight, 0, 0, 0, 0, direction)
+  // Save line state if re-entrant (nested calculateLayout from measureFunc)
+  const saved = enterLayout()
+  try {
+    resetLayoutStats()
+    getTrace()?.resetCounter()
+    // Clear layout cache from previous pass (important for correct layout after tree changes)
+    root.resetLayoutCache()
+    // Pass absolute position (0,0) for root node - used for Yoga-compatible edge rounding
+    layoutNode(root, availableWidth, availableHeight, 0, 0, 0, 0, direction)
+  } finally {
+    // Restore line state for outer pass (no-op at depth 0)
+    exitLayout(saved)
+  }
 }
 
 /**
@@ -153,7 +162,9 @@ function layoutNode(
     !node.isDirty() &&
     Object.is(flex.lastAvailW, availableWidth) &&
     Object.is(flex.lastAvailH, availableHeight) &&
-    flex.lastDir === direction
+    flex.lastDir === direction &&
+    flex.lastAbsX === absX &&
+    flex.lastAbsY === absY
   ) {
     // Constraints unchanged - just update position based on offset delta
     _t?.fingerprintHit(_tn, availableWidth, availableHeight)
@@ -175,6 +186,8 @@ function layoutNode(
     sameW: Object.is(flex.lastAvailW, availableWidth),
     sameH: Object.is(flex.lastAvailH, availableHeight),
     sameDir: flex.lastDir === direction,
+    sameAbsX: flex.lastAbsX === absX,
+    sameAbsY: flex.lastAbsY === absY,
   })
 
   // ============================================================================
@@ -448,29 +461,52 @@ function layoutNode(
         baseSize = sizeVal.value
       } else if (sizeVal.unit === C.UNIT_PERCENT) {
         baseSize = Number.isNaN(mainAxisSize) ? 0 : mainAxisSize * (sizeVal.value / 100)
-      } else if (child.hasMeasureFunc() && childStyle.flexGrow === 0) {
-        // For auto-sized children with measureFunc but no flexGrow,
-        // pre-measure to get intrinsic size for justify-content calculation
-        // Use cached margins
+      } else if (child.hasMeasureFunc()) {
+        // For auto-sized children with measureFunc,
+        // pre-measure to get intrinsic content size as flex base size.
+        // CSS spec section 9.2: flex base size is content-based regardless of flexGrow.
+        //
+        // When flexGrow > 0, measure UNCONSTRAINED on main axis to get max-content
+        // size. This ensures proportional distribution based on content (e.g., two
+        // text nodes with widths 10 and 20 get proportional shares of free space).
+        // When flexGrow === 0, measure AT_MOST container (original behavior for
+        // justify-content calculation).
         const crossMargin = isRow ? cflex.marginT + cflex.marginB : cflex.marginL + cflex.marginR
         const availCross = crossAxisSize - crossMargin
-        // Use cached measure to avoid redundant calls within a layout pass
         // Measure function takes PHYSICAL (width, height), not logical (main, cross).
         // For row: main=width, cross=height. For column: main=height, cross=width.
-        const mW = isRow ? mainAxisSize : availCross
-        const mH = isRow ? availCross : mainAxisSize
+        const wantMaxContent = childStyle.flexGrow > 0
+        const mW = isRow
+          ? wantMaxContent
+            ? Infinity
+            : Number.isNaN(mainAxisSize)
+              ? Infinity
+              : mainAxisSize
+          : Number.isNaN(availCross)
+            ? Infinity
+            : availCross
+        const mH = isRow
+          ? Number.isNaN(availCross)
+            ? Infinity
+            : availCross
+          : wantMaxContent
+            ? Infinity
+            : Number.isNaN(mainAxisSize)
+              ? Infinity
+              : mainAxisSize
         const mWMode = isRow
-          ? C.MEASURE_MODE_AT_MOST
+          ? wantMaxContent
+            ? C.MEASURE_MODE_UNDEFINED
+            : C.MEASURE_MODE_AT_MOST
           : Number.isNaN(availCross)
             ? C.MEASURE_MODE_UNDEFINED
             : C.MEASURE_MODE_AT_MOST
-        const mHMode = isRow ? C.MEASURE_MODE_UNDEFINED : C.MEASURE_MODE_AT_MOST
-        const measured = child.cachedMeasure(
-          Number.isNaN(mW) ? Infinity : mW,
-          mWMode,
-          Number.isNaN(mH) ? Infinity : mH,
-          mHMode,
-        )!
+        const mHMode = isRow
+          ? C.MEASURE_MODE_UNDEFINED
+          : wantMaxContent
+            ? C.MEASURE_MODE_UNDEFINED
+            : C.MEASURE_MODE_AT_MOST
+        const measured = child.cachedMeasure(mW, mWMode, mH, mHMode)!
         baseSize = isRow ? measured.width : measured.height
       } else if (child.children.length > 0) {
         // For auto-sized children WITH children but no measureFunc,
@@ -535,8 +571,16 @@ function layoutNode(
     // below content size. Yoga defaults flexShrink to 0, preventing this. For
     // overflow:hidden/scroll children, ensure flexShrink >= 1 so they participate
     // in negative free space distribution (matching CSS behavior).
-    cflex.flexShrink =
-      childStyle.overflow !== C.OVERFLOW_VISIBLE ? Math.max(childStyle.flexShrink, 1) : childStyle.flexShrink
+    //
+    // Measured items with flexGrow > 0 use max-content as base size (CSS section 9.2).
+    // When their total base sizes exceed the container, they must be shrinkable so
+    // the flex algorithm can distribute negative free space. Without this, a single
+    // flexGrow text node whose content exceeds the container would overflow instead
+    // of filling the remaining space.
+    let shrink = childStyle.flexShrink
+    if (childStyle.overflow !== C.OVERFLOW_VISIBLE) shrink = Math.max(shrink, 1)
+    if (child.hasMeasureFunc() && childStyle.flexGrow > 0) shrink = Math.max(shrink, 1)
+    cflex.flexShrink = shrink
 
     // Store base and main size (start from base size - distribution happens from here)
     cflex.baseSize = baseSize
@@ -862,8 +906,13 @@ function layoutNode(
           // Phase 5 already called cachedMeasure, so this is typically a cache hit (no alloc).
           const crossMargin = crossMarginStart + crossMarginEnd
           const availCross = Number.isNaN(crossAxisSize) ? Infinity : crossAxisSize - crossMargin
-          const mW = isRow ? mainAxisSize : availCross
-          const mH = isRow ? availCross : mainAxisSize
+          // Use child's resolved mainSize (from flex distribution) instead of parent's
+          // mainAxisSize. After Phase 6a, child.flex.mainSize may be smaller than
+          // mainAxisSize (e.g., due to wrapping). Measuring at parent width would
+          // underestimate text wrapping height (fewer lines → shorter cross size).
+          const childMainSize = child.flex.mainSize
+          const mW = isRow ? childMainSize : availCross
+          const mH = isRow ? availCross : childMainSize
           const mWMode = Number.isNaN(mW) ? C.MEASURE_MODE_UNDEFINED : C.MEASURE_MODE_AT_MOST
           const mHMode = Number.isNaN(mH) ? C.MEASURE_MODE_UNDEFINED : C.MEASURE_MODE_AT_MOST
           const measured = child.cachedMeasure(
@@ -1789,6 +1838,88 @@ function layoutNode(
           child.layout.width = Math.round(stretchedCross)
         }
       }
+
+      // -----------------------------------------------------------------------
+      // PHASE 9c: Recompute cross-axis alignment after shrink-wrap
+      // -----------------------------------------------------------------------
+      // When the parent's cross axis was auto (NaN during Phase 8), alignment
+      // offsets for CENTER, FLEX_END, and auto margins computed NaN because
+      // availableCrossSpace = NaN - childSize - margin = NaN.
+      // Now that cross size is known from shrink-wrap, recompute those offsets.
+      if (Number.isNaN(crossAxisSize) && relativeCount > 0) {
+        const finalCross9c = isRow ? nodeHeight - innerTop - innerBottom : nodeWidth - innerLeft - innerRight
+        if (!Number.isNaN(finalCross9c) && finalCross9c > 0) {
+          for (const child of node.children) {
+            if (child.flex.relativeIndex < 0) continue
+            const cstyle = child.style
+            let childAlign = style.alignItems
+            if (cstyle.alignSelf !== C.ALIGN_AUTO) {
+              childAlign = cstyle.alignSelf
+            }
+            const cCrossDim = isRow ? cstyle.height : cstyle.width
+            const cCrossIsAuto = cCrossDim.unit === C.UNIT_AUTO || cCrossDim.unit === C.UNIT_UNDEFINED
+            if (
+              childAlign === C.ALIGN_STRETCH &&
+              cstyle.alignSelf === C.ALIGN_AUTO &&
+              !Number.isNaN(cstyle.aspectRatio) &&
+              cstyle.aspectRatio > 0 &&
+              cCrossIsAuto
+            ) {
+              childAlign = C.ALIGN_FLEX_START
+            }
+
+            const crossStartIdx = isRow ? 1 : 0
+            const crossEndIdx = isRow ? 3 : 2
+            const hasAutoStart = isEdgeAuto(cstyle.margin, crossStartIdx, style.flexDirection, direction)
+            const hasAutoEnd = isEdgeAuto(cstyle.margin, crossEndIdx, style.flexDirection, direction)
+            const needsAlignment =
+              hasAutoStart || hasAutoEnd || childAlign === C.ALIGN_CENTER || childAlign === C.ALIGN_FLEX_END
+            if (!needsAlignment) continue
+
+            const childCrossSize = isRow ? child.layout.height : child.layout.width
+            const cCrossMargin = isRow
+              ? resolveEdgeValue(cstyle.margin, 1, style.flexDirection, contentWidth, direction) +
+                resolveEdgeValue(cstyle.margin, 3, style.flexDirection, contentWidth, direction)
+              : resolveEdgeValue(cstyle.margin, 0, style.flexDirection, contentWidth, direction) +
+                resolveEdgeValue(cstyle.margin, 2, style.flexDirection, contentWidth, direction)
+            const availSpace = finalCross9c - childCrossSize - cCrossMargin
+
+            let crossOffset = 0
+            if (hasAutoStart && hasAutoEnd) {
+              crossOffset = Math.max(0, availSpace) / 2
+            } else if (hasAutoStart) {
+              crossOffset = Math.max(0, availSpace)
+            } else if (hasAutoEnd) {
+              crossOffset = 0
+            } else {
+              switch (childAlign) {
+                case C.ALIGN_FLEX_END:
+                  crossOffset = availSpace
+                  break
+                case C.ALIGN_CENTER:
+                  crossOffset = availSpace / 2
+                  break
+              }
+            }
+
+            if (isRow) {
+              if (Number.isNaN(child.layout.top)) {
+                const cMarginT = resolveEdgeValue(cstyle.margin, 1, style.flexDirection, contentWidth, direction)
+                child.layout.top = Math.round(cMarginT + crossOffset)
+              } else if (crossOffset !== 0) {
+                child.layout.top += Math.round(crossOffset)
+              }
+            } else {
+              if (Number.isNaN(child.layout.left)) {
+                const cMarginL = resolveEdgeValue(cstyle.margin, 0, style.flexDirection, contentWidth, direction)
+                child.layout.left = Math.round(cMarginL + crossOffset)
+              } else if (crossOffset !== 0) {
+                child.layout.left += Math.round(crossOffset)
+              }
+            }
+          }
+        }
+      }
     }
   }
 
@@ -2080,6 +2211,8 @@ function layoutNode(
   flex.lastAvailH = availableHeight
   flex.lastOffsetX = offsetX
   flex.lastOffsetY = offsetY
+  flex.lastAbsX = absX
+  flex.lastAbsY = absY
   flex.lastDir = direction
   flex.layoutValid = true
   _t?.layoutExit(_tn, layout.width, layout.height)

@@ -204,8 +204,7 @@ const mutations: Mutation[] = [
       childStyle.overflow !== C.OVERFLOW_VISIBLE ? Math.max(childStyle.flexShrink, 1) : childStyle.flexShrink`,
     replace: `    cflex.flexShrink =
       childStyle.flexShrink /* MUTATION: removed overflow flexShrink override */`,
-    description:
-      "Remove CSS 4.5 overflow:hidden flexShrink override — overflow containers won't shrink to fit parent",
+    description: "Remove CSS 4.5 overflow:hidden flexShrink override — overflow containers won't shrink to fit parent",
     testFiles: ["vendor/flexily/tests/layout.test.ts"],
   },
   {
@@ -223,7 +222,8 @@ const mutations: Mutation[] = [
     layout.top = Math.floor(offsetY + marginTop)
 
     // MUTATION: use floor instead of round — creates pixel drift`,
-    description: "Use Math.floor instead of Math.round for leaf node rounding — dimensions will be wrong for fractional values",
+    description:
+      "Use Math.floor instead of Math.round for leaf node rounding — dimensions will be wrong for fractional values",
     testFiles: ["vendor/flexily/tests/layout.test.ts", "vendor/flexily/tests/relayout-consistency.test.ts"],
   },
 ]
@@ -267,10 +267,11 @@ async function main() {
       process.stdout.write(`  "${mutation.name}" ... `)
 
       const testFiles = mutation.testFiles ?? ["vendor/flexily/tests/relayout-consistency.test.ts"]
-      const proc = Bun.spawn(
-        ["bun", "vitest", "run", "--project", "vendor", ...testFiles, "--reporter=dot"],
-        { cwd: kmRoot, stdout: "pipe", stderr: "pipe" },
-      )
+      const proc = Bun.spawn(["bun", "vitest", "run", "--project", "vendor", ...testFiles, "--reporter=dot"], {
+        cwd: kmRoot,
+        stdout: "pipe",
+        stderr: "pipe",
+      })
       const exitCode = await proc.exited
 
       if (exitCode === 0) {
