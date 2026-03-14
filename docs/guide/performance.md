@@ -204,12 +204,12 @@ These benchmarks compare **fundamentally different execution models** (pure JS v
 
 All benchmark source code is in the `bench/` directory:
 
-| File | What it measures |
-| --- | --- |
-| [`bench/yoga-compare-warmup.bench.ts`](https://github.com/beorn/flexily/tree/main/bench/yoga-compare-warmup.bench.ts) | Flat + deep initial layout with JIT warmup |
-| [`bench/yoga-compare-rich.bench.ts`](https://github.com/beorn/flexily/tree/main/bench/yoga-compare-rich.bench.ts) | TUI boards, measure functions, property diversity |
-| [`bench/incremental.bench.ts`](https://github.com/beorn/flexily/tree/main/bench/incremental.bench.ts) | No-change, dirty leaf, resize re-layout |
-| [`bench/features.bench.ts`](https://github.com/beorn/flexily/tree/main/bench/features.bench.ts) | Per-feature comparison (grow, shrink, wrap, etc.) |
+| File                                                                                                                  | What it measures                                  |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [`bench/yoga-compare-warmup.bench.ts`](https://github.com/beorn/flexily/tree/main/bench/yoga-compare-warmup.bench.ts) | Flat + deep initial layout with JIT warmup        |
+| [`bench/yoga-compare-rich.bench.ts`](https://github.com/beorn/flexily/tree/main/bench/yoga-compare-rich.bench.ts)     | TUI boards, measure functions, property diversity |
+| [`bench/incremental.bench.ts`](https://github.com/beorn/flexily/tree/main/bench/incremental.bench.ts)                 | No-change, dirty leaf, resize re-layout           |
+| [`bench/features.bench.ts`](https://github.com/beorn/flexily/tree/main/bench/features.bench.ts)                       | Per-feature comparison (grow, shrink, wrap, etc.) |
 
 ### Running Benchmarks
 

@@ -62,6 +62,7 @@ const root = Node.create() // Works immediately
 ```
 
 This eliminates:
+
 - Top-level `await` requirements
 - Init-before-use guards
 - Async module loading patterns
@@ -101,21 +102,21 @@ See [Yoga Divergences](yoga-divergences.md) for detailed explanations and exampl
 
 ### Identical API (no changes needed)
 
-| Category | Methods |
-| --- | --- |
-| **Dimensions** | `setWidth`, `setHeight`, `setWidthAuto`, `setHeightAuto`, `setWidthPercent`, `setHeightPercent` |
-| **Min/Max** | `setMinWidth`, `setMaxWidth`, `setMinHeight`, `setMaxHeight` |
-| **Flex** | `setFlexGrow`, `setFlexShrink`, `setFlexBasis`, `setFlexDirection`, `setFlexWrap` |
-| **Alignment** | `setJustifyContent`, `setAlignItems`, `setAlignSelf`, `setAlignContent` |
-| **Spacing** | `setPadding`, `setMargin`, `setMarginAuto`, `setBorder`, `setGap` |
-| **Position** | `setPositionType`, `setPosition` |
-| **Display** | `setDisplay`, `setOverflow` |
-| **Aspect Ratio** | `setAspectRatio` |
-| **Tree** | `insertChild`, `removeChild`, `getChildCount`, `getChild`, `getParent` |
-| **Measure** | `setMeasureFunc`, `setBaselineFunc`, `markDirty`, `isDirty` |
-| **Layout** | `calculateLayout` |
-| **Computed** | `getComputedLeft`, `getComputedTop`, `getComputedWidth`, `getComputedHeight`, etc. |
-| **Lifecycle** | `Node.create()`, `free()` |
+| Category         | Methods                                                                                         |
+| ---------------- | ----------------------------------------------------------------------------------------------- |
+| **Dimensions**   | `setWidth`, `setHeight`, `setWidthAuto`, `setHeightAuto`, `setWidthPercent`, `setHeightPercent` |
+| **Min/Max**      | `setMinWidth`, `setMaxWidth`, `setMinHeight`, `setMaxHeight`                                    |
+| **Flex**         | `setFlexGrow`, `setFlexShrink`, `setFlexBasis`, `setFlexDirection`, `setFlexWrap`               |
+| **Alignment**    | `setJustifyContent`, `setAlignItems`, `setAlignSelf`, `setAlignContent`                         |
+| **Spacing**      | `setPadding`, `setMargin`, `setMarginAuto`, `setBorder`, `setGap`                               |
+| **Position**     | `setPositionType`, `setPosition`                                                                |
+| **Display**      | `setDisplay`, `setOverflow`                                                                     |
+| **Aspect Ratio** | `setAspectRatio`                                                                                |
+| **Tree**         | `insertChild`, `removeChild`, `getChildCount`, `getChild`, `getParent`                          |
+| **Measure**      | `setMeasureFunc`, `setBaselineFunc`, `markDirty`, `isDirty`                                     |
+| **Layout**       | `calculateLayout`                                                                               |
+| **Computed**     | `getComputedLeft`, `getComputedTop`, `getComputedWidth`, `getComputedHeight`, etc.              |
+| **Lifecycle**    | `Node.create()`, `free()`                                                                       |
 
 ### Same Constants
 
@@ -123,26 +124,38 @@ All Yoga constants are exported with identical names and values:
 
 ```typescript
 import {
-  FLEX_DIRECTION_ROW, FLEX_DIRECTION_COLUMN,
-  JUSTIFY_CENTER, JUSTIFY_SPACE_BETWEEN,
-  ALIGN_STRETCH, ALIGN_BASELINE,
-  EDGE_TOP, EDGE_LEFT, EDGE_ALL,
-  GUTTER_ROW, GUTTER_COLUMN,
-  DIRECTION_LTR, DIRECTION_RTL,
-  MEASURE_MODE_EXACTLY, MEASURE_MODE_AT_MOST,
-  POSITION_TYPE_ABSOLUTE, POSITION_TYPE_RELATIVE,
-  OVERFLOW_HIDDEN, OVERFLOW_SCROLL,
-  DISPLAY_FLEX, DISPLAY_NONE,
-  WRAP_WRAP, WRAP_NO_WRAP,
+  FLEX_DIRECTION_ROW,
+  FLEX_DIRECTION_COLUMN,
+  JUSTIFY_CENTER,
+  JUSTIFY_SPACE_BETWEEN,
+  ALIGN_STRETCH,
+  ALIGN_BASELINE,
+  EDGE_TOP,
+  EDGE_LEFT,
+  EDGE_ALL,
+  GUTTER_ROW,
+  GUTTER_COLUMN,
+  DIRECTION_LTR,
+  DIRECTION_RTL,
+  MEASURE_MODE_EXACTLY,
+  MEASURE_MODE_AT_MOST,
+  POSITION_TYPE_ABSOLUTE,
+  POSITION_TYPE_RELATIVE,
+  OVERFLOW_HIDDEN,
+  OVERFLOW_SCROLL,
+  DISPLAY_FLEX,
+  DISPLAY_NONE,
+  WRAP_WRAP,
+  WRAP_NO_WRAP,
 } from "flexily"
 ```
 
 ### Not Yet Implemented
 
-| Feature | Notes |
-| --- | --- |
+| Feature          | Notes                             |
+| ---------------- | --------------------------------- |
 | `order` property | Items laid out in insertion order |
-| Writing modes | Horizontal-tb only |
+| Writing modes    | Horizontal-tb only                |
 
 These are advanced features that most projects don't use. If your project depends on them, Flexily is not yet a full replacement for your use case.
 
@@ -164,8 +177,8 @@ With Yoga gone, you can clean up:
 Flexily ships two layout implementations:
 
 ```typescript
-import { Node } from "flexily"          // Zero-allocation (default, fast)
-import { Node } from "flexily/classic"  // Allocating (easier to debug)
+import { Node } from "flexily" // Zero-allocation (default, fast)
+import { Node } from "flexily/classic" // Allocating (easier to debug)
 ```
 
 Both produce identical output. Use `flexily/classic` when stepping through layout computation in a debugger.
