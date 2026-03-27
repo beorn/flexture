@@ -1,7 +1,7 @@
 {
   "name": "flexily",
-  "version": "0.3.1",
-  "description": "Pure JavaScript flexbox layout engine \u2014 Yoga-compatible API, faster initial layout, smaller bundle, no WASM",
+  "version": "0.3.2",
+  "description": "Pure JavaScript flexbox layout engine — Yoga-compatible API, faster initial layout, smaller bundle, no WASM",
   "keywords": [
     "canvas-ui",
     "css",
