@@ -5,8 +5,13 @@ export default defineConfig({
   description: "Pure JavaScript Flexbox Layout Engine -- Yoga-compatible API, faster, smaller, no WASM",
   base: "/flexily/",
 
+  sitemap: { hostname: "https://flexily.dev" },
+
   head: [
     ["link", { rel: "icon", type: "image/svg+xml", href: "/flexily/logo.svg" }],
+    ["meta", { property: "og:type", content: "website" }],
+    ["meta", { property: "og:site_name", content: "Flexily" }],
+    ["meta", { name: "twitter:card", content: "summary" }],
     [
       "script",
       {
@@ -82,5 +87,22 @@ export default defineConfig({
       message: "Released under the MIT License.",
       copyright: "Copyright &copy; 2024-present",
     },
+  },
+
+  transformPageData(pageData) {
+    const title = pageData.title || "Flexily"
+    const description = pageData.description || "High-performance flexbox layout engine"
+    pageData.frontmatter.head ??= []
+    pageData.frontmatter.head.push(
+      ["meta", { property: "og:title", content: title }],
+      ["meta", { property: "og:description", content: description }],
+      [
+        "meta",
+        {
+          property: "og:url",
+          content: `https://flexily.dev/${pageData.relativePath.replace(/\.md$/, ".html").replace(/index\.html$/, "")}`,
+        },
+      ],
+    )
   },
 })

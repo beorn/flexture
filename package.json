@@ -52,6 +52,7 @@
     "test:watch": "bun test --watch",
     "bench": "bunx --bun vitest bench",
     "typecheck": "tsc --noEmit",
+    "ci": "bun run typecheck && bun test",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
