@@ -58,12 +58,12 @@ Every box must be checked before tagging 1.0.
 - [x] `docs/algorithm.md` -- layout algorithm explanation
 - [x] `docs/yoga-comparison.md` -- feature comparison
 - [x] `docs/incremental-layout-bugs.md` -- bug taxonomy
-- [ ] CHANGELOG.md started (or generated from git history at release time)
+- [x] CHANGELOG.md started (v0.1.0, v0.3.3, v0.5.0 entries)
 
 ## Known Gaps
 
 1. ~~**Bundle audit** (bead `km-flexily.bundle-audit`)~~ -- Done. `bun scripts/measure-bundle.ts` measures all entry points. README and docs updated with accurate numbers.
-2. **npm publish** (bead `km-flexily.npm-publish`) -- blocked by vendor rename (`km-infra.vendor-rename-impl`). The package name `flexily` needs to be claimed on npm.
+2. ~~**npm publish**~~ -- Done. Published as `flexily@0.5.0` on npm. Docs site at flexily.dev.
 3. **API surface audit** -- no formal review of which symbols are exported vs. internal. A pre-1.0 pass should ensure only intentional public API is accessible via the `exports` map.
 
 ## What's NOT in 1.0
