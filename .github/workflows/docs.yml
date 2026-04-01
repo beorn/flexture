@@ -32,11 +32,6 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
@@ -44,7 +39,7 @@ jobs:
         run: cd docs && bun install
 
       - name: Build docs
-        run: cd docs && bun run docs:build
+        run: cd docs && bunx --bun vitepress build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
