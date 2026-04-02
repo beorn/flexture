@@ -46,7 +46,19 @@ export default defineConfig({
     siteTitle: "Flexily",
 
     nav: [
-      { text: "Guide", link: "/guide/getting-started" },
+      {
+        text: "Guide",
+        items: [
+          { text: "Getting Started", link: "/guide/getting-started" },
+          { text: "Why Flexily?", link: "/guide/why-flexily" },
+          { text: "Algorithm", link: "/guide/algorithm" },
+          { text: "Performance", link: "/guide/performance" },
+          { text: "Zero-Allocation Design", link: "/guide/zero-allocation" },
+          { text: "Testing", link: "/guide/testing" },
+          { text: "Yoga Comparison", link: "/guide/yoga-comparison" },
+          { text: "Migration from Yoga", link: "/guide/migration-from-yoga" },
+        ],
+      },
       { text: "API", link: "/api/reference" },
       {
         text: "Links",
