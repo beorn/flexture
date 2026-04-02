@@ -1,29 +1,33 @@
 import { defineConfig } from "vitepress"
+import llmstxt from "vitepress-plugin-llms"
+import { seoHead, seoTransformPageData } from "@bearly/vitepress-enrich"
+
+const seoOptions = {
+  hostname: "https://beorn.codes/flexily",
+  siteName: "Flexily",
+  description: "High-performance flexbox layout engine",
+  ogImage: "https://beorn.codes/flexily/og-image.svg",
+  author: "Bjørn Stabell",
+  codeRepository: "https://github.com/beorn/flexily",
+}
 
 export default defineConfig({
   title: "Flexily",
   description: "Pure JavaScript Flexbox Layout Engine -- Yoga-compatible API, faster, smaller, no WASM",
   base: "/flexily/",
+  lastUpdated: true,
 
-  sitemap: { hostname: "https://beorn.codes/flexily" },
+  sitemap: { hostname: "https://beorn.codes/flexily/" },
+
+  vite: {
+    plugins: [llmstxt()],
+    ssr: {
+      noExternal: ["@bearly/vitepress-enrich"],
+    },
+  },
 
   head: [
     ["link", { rel: "icon", type: "image/svg+xml", href: "/flexily/logo.svg" }],
-    ["meta", { property: "og:type", content: "website" }],
-    ["meta", { property: "og:site_name", content: "Flexily" }],
-    ["meta", { name: "twitter:card", content: "summary" }],
-    ["meta", { property: "og:image", content: "https://beorn.codes/flexily/og-image.svg" }],
-    [
-      "script",
-      { type: "application/ld+json" },
-      JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        name: "Flexily",
-        url: "https://beorn.codes/flexily",
-        description: "High-performance flexbox layout engine",
-      }),
-    ],
     [
       "script",
       {
@@ -32,7 +36,10 @@ export default defineConfig({
         "data-cf-beacon": '{"token": "f7205b82de9042c39f6609a9661b479f"}',
       },
     ],
+    ...seoHead(seoOptions),
   ],
+
+  transformPageData: seoTransformPageData(seoOptions),
 
   themeConfig: {
     logo: "/logo.svg",
@@ -96,49 +103,9 @@ export default defineConfig({
     },
 
     footer: {
-      message: 'Powers <a href="https://silvery.dev">Silvery</a> layout · <a href="https://beorn.codes/flexily">Pretext</a> text layout integration (alpha)',
-      copyright: 'Built by <a href="https://beorn.codes">Bjørn Stabell</a>'
+      message:
+        'Powers <a href="https://silvery.dev">Silvery</a> layout · <a href="https://beorn.codes/flexily">Pretext</a> text layout integration (alpha)',
+      copyright: 'Built by <a href="https://beorn.codes">Bjørn Stabell</a>',
     },
-  },
-
-  transformPageData(pageData) {
-    const title = pageData.title || "Flexily"
-    const description = pageData.description || "High-performance flexbox layout engine"
-    const cleanPath = pageData.relativePath.replace(/\.md$/, ".html").replace(/index\.html$/, "")
-    pageData.frontmatter.head ??= []
-    pageData.frontmatter.head.push(
-      ["meta", { property: "og:title", content: title }],
-      ["meta", { property: "og:description", content: description }],
-      ["meta", { property: "og:url", content: `https://beorn.codes/flexily/${cleanPath}` }],
-      ["link", { rel: "canonical", href: `https://beorn.codes/flexily/${cleanPath}` }],
-    )
-
-    // JSON-LD BreadcrumbList
-    const segments = cleanPath
-      .replace(/\.html$/, "")
-      .split("/")
-      .filter(Boolean)
-    if (segments.length > 0) {
-      const breadcrumbItems = [{ "@type": "ListItem", position: 1, name: "Home", item: "https://beorn.codes/flexily/" }]
-      for (let i = 0; i < segments.length; i++) {
-        const path = segments.slice(0, i + 1).join("/")
-        const name = segments[i].replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-        breadcrumbItems.push({
-          "@type": "ListItem",
-          position: i + 2,
-          name: pageData.title && i === segments.length - 1 ? pageData.title : name,
-          item: `https://beorn.codes/flexily/${path}`,
-        })
-      }
-      pageData.frontmatter.head.push([
-        "script",
-        { type: "application/ld+json" },
-        JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          itemListElement: breadcrumbItems,
-        }),
-      ])
-    }
   },
 })
