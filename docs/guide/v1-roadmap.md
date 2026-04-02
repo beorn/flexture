@@ -62,7 +62,7 @@ Every box must be checked before tagging 1.0.
 
 ## Known Gaps
 
-1. ~~**Bundle audit** (bead `km-flexily.bundle-audit`)~~ -- Done. `bun scripts/measure-bundle.ts` measures all entry points. README and docs updated with accurate numbers.
+1. ~~**Bundle audit**~~ -- Done. `bun scripts/measure-bundle.ts` measures all entry points. README and docs updated with accurate numbers.
 2. ~~**npm publish**~~ -- Done. Published as `flexily@0.5.0` on npm. Docs site at beorn.codes/flexily.
 3. **API surface audit** -- no formal review of which symbols are exported vs. internal. A pre-1.0 pass should ensure only intentional public API is accessible via the `exports` map.
 
@@ -98,7 +98,7 @@ Flexily should reach 1.0 **before** silvery, because:
 
 Suggested order:
 
-1. Complete vendor rename (`km-infra.vendor-rename-impl`)
+1. Complete vendor rename
 2. Run bundle audit, verify all criteria above
 3. Tag and publish `flexily@1.0.0`
 4. Update silvery's `peerDependencies` to `flexily@^1.0.0`

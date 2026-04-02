@@ -54,19 +54,19 @@ function expectRelayoutMatchesFresh(buildTree, width, height) {
 
 #### Test Groups
 
-| Group                             | Seeds | What it tests                                                                                               |
-| --------------------------------- | ----- | ----------------------------------------------------------------------------------------------------------- |
-| Targeted scenarios                | 6     | Specific bug reproductions (km-10mat card, bordered card, deep tree, content change, kanban, tree mutation) |
-| measureNode invariant             | 1     | layout.width/height unchanged for clean nodes after re-layout                                               |
-| Snapshot regression               | 2     | Idempotency and exact geometry for known card structure                                                     |
-| Resize stability                  | 2     | Width sweep round-trip and column measure height constraint                                                 |
-| Fuzz: re-layout vs fresh          | 500   | Random trees + random dirty marking, compare incremental vs fresh                                           |
-| Fuzz: cache invalidation stress   | 100   | Same tree re-laid out at multiple widths (60→80→100→80), then dirty+re-layout                               |
-| Fuzz: idempotency                 | 200   | Layout twice with identical constraints — results must match                                                |
-| Fuzz: resize round-trip           | 200   | Layout at W1→W2→W1, compare final vs fresh at W1                                                            |
-| Fuzz: multi-step constraint sweep | 100   | Full lifecycle: 3 random widths → dirty → random final width → compare vs fresh                             |
-| Content change (targeted)         | 3     | Mutable measure functions: text grows, text shrinks, content change + resize combined                       |
-| Fuzz: content change              | 100   | Random trees with mutable measure functions — change content + markDirty, compare vs fresh                  |
+| Group                             | Seeds | What it tests                                                                                                  |
+| --------------------------------- | ----- | -------------------------------------------------------------------------------------------------------------- |
+| Targeted scenarios                | 6     | Specific bug reproductions (10-material card, bordered card, deep tree, content change, kanban, tree mutation) |
+| measureNode invariant             | 1     | layout.width/height unchanged for clean nodes after re-layout                                                  |
+| Snapshot regression               | 2     | Idempotency and exact geometry for known card structure                                                        |
+| Resize stability                  | 2     | Width sweep round-trip and column measure height constraint                                                    |
+| Fuzz: re-layout vs fresh          | 500   | Random trees + random dirty marking, compare incremental vs fresh                                              |
+| Fuzz: cache invalidation stress   | 100   | Same tree re-laid out at multiple widths (60→80→100→80), then dirty+re-layout                                  |
+| Fuzz: idempotency                 | 200   | Layout twice with identical constraints — results must match                                                   |
+| Fuzz: resize round-trip           | 200   | Layout at W1→W2→W1, compare final vs fresh at W1                                                               |
+| Fuzz: multi-step constraint sweep | 100   | Full lifecycle: 3 random widths → dirty → random final width → compare vs fresh                                |
+| Content change (targeted)         | 3     | Mutable measure functions: text grows, text shrinks, content change + resize combined                          |
+| Fuzz: content change              | 100   | Random trees with mutable measure functions — change content + markDirty, compare vs fresh                     |
 
 #### Random Tree Generation
 
@@ -91,7 +91,7 @@ bun test tests/differential-fuzz.fuzz.ts
 
 ## Public Testing API (`flexily/testing`)
 
-Flexily exports diagnostic helpers for downstream consumers (silvery, km-tui):
+Flexily exports diagnostic helpers for downstream consumers (silvery, application code):
 
 ```typescript
 import {
