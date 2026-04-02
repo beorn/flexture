@@ -57,6 +57,7 @@ export default defineConfig({
           { text: "Testing", link: "/guide/testing" },
           { text: "Yoga Comparison", link: "/guide/yoga-comparison" },
           { text: "Migration from Yoga", link: "/guide/migration-from-yoga" },
+          { text: "Pretext Integration", link: "/guide/pretext" },
         ],
       },
       { text: "API", link: "/api/reference" },
@@ -87,6 +88,10 @@ export default defineConfig({
             { text: "Testing", link: "/guide/testing" },
             { text: "Incremental Layout Bugs", link: "/guide/incremental-layout-bugs" },
           ],
+        },
+        {
+          text: "Integrations",
+          items: [{ text: "Pretext Integration", link: "/guide/pretext" }],
         },
         {
           text: "Reference",

@@ -35,6 +35,8 @@ features:
   - icon: "\U0001F4DD"
     title: Pretext Integration (alpha)
     details: "Rich text layout with word-wrap, hyphenation, and proportional fonts — powered by <a href='https://github.com/chenglou/pretext'>Pretext</a>. Enables browser-quality text rendering in terminal and canvas applications."
+    link: /guide/pretext
+    linkText: Learn more
   - icon: "\U0001F9EA"
     title: 1561 Tests
     details: "Includes 1200+ incremental re-layout fuzz tests using differential oracle. Catches bugs that single-pass tests miss."
