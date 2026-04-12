@@ -825,6 +825,34 @@ export class Node {
     this.markDirty()
   }
 
+  /**
+   * Set the width to fit-content mode.
+   *
+   * CSS fit-content = min(max-content, max(min-content, available-width)).
+   * For terminals: min(max-content, available-width) since min-content
+   * floor is rarely relevant.
+   *
+   * The layout algorithm measures unconstrained content width (max-content),
+   * then clamps to the available width from the parent.
+   */
+  setWidthFitContent(): void {
+    this._style.width = { value: 0, unit: C.UNIT_FIT_CONTENT }
+    this.markDirty()
+  }
+
+  /**
+   * Set the width to snug-content mode.
+   *
+   * Like fit-content but signals that the consumer wants the tightest
+   * possible width (binary-search shrinkwrap). The layout engine treats
+   * this identically to fit-content for sizing; the consuming framework
+   * (e.g., silvery) can further tighten via its own binary search.
+   */
+  setWidthSnugContent(): void {
+    this._style.width = { value: 0, unit: C.UNIT_SNUG_CONTENT }
+    this.markDirty()
+  }
+
   // ============================================================================
   // Height Setters
   // ============================================================================

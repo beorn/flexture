@@ -115,6 +115,8 @@ export {
   UNIT_POINT,
   UNIT_PERCENT,
   UNIT_AUTO,
+  UNIT_FIT_CONTENT,
+  UNIT_SNUG_CONTENT,
 } from "./constants.js"
 
 // Types

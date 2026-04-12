@@ -217,6 +217,8 @@ function layoutNode(
   // ============================================================================
 
   let nodeWidth: number
+  const isFitContentWidth =
+    style.width.unit === C.UNIT_FIT_CONTENT || style.width.unit === C.UNIT_SNUG_CONTENT
   if (style.width.unit === C.UNIT_POINT) {
     nodeWidth = style.width.value
   } else if (style.width.unit === C.UNIT_PERCENT) {
@@ -226,6 +228,9 @@ function layoutNode(
     // Unconstrained: use NaN to signal shrink-wrap (will be computed from children)
     nodeWidth = NaN
   } else {
+    // AUTO and FIT_CONTENT/SNUG_CONTENT both resolve to available - margins.
+    // For fit-content, Phase 9 will shrink-wrap to actual content width,
+    // achieving CSS fit-content = min(max-content, available-width).
     nodeWidth = availableWidth - marginLeft - marginRight
   }
   // Apply min/max constraints (works even with NaN available for point-based constraints)
@@ -322,12 +327,14 @@ function layoutNode(
 
   // Handle measure function (text nodes)
   if (node.hasMeasureFunc() && node.children.length === 0) {
-    // For unconstrained dimensions (NaN), treat as auto-sizing
+    // For unconstrained dimensions (NaN), treat as auto-sizing.
+    // Fit-content also auto-sizes on width (AT_MOST mode with available constraint).
     const widthIsAuto =
       style.width.unit === C.UNIT_AUTO || style.width.unit === C.UNIT_UNDEFINED || Number.isNaN(nodeWidth)
+    const widthIsFitContent = isFitContentWidth
     const heightIsAuto =
       style.height.unit === C.UNIT_AUTO || style.height.unit === C.UNIT_UNDEFINED || Number.isNaN(nodeHeight)
-    const widthMode = widthIsAuto ? C.MEASURE_MODE_AT_MOST : C.MEASURE_MODE_EXACTLY
+    const widthMode = widthIsAuto || widthIsFitContent ? C.MEASURE_MODE_AT_MOST : C.MEASURE_MODE_EXACTLY
     const heightMode = heightIsAuto ? C.MEASURE_MODE_UNDEFINED : C.MEASURE_MODE_EXACTLY
 
     // For unconstrained width, use a large value; measureFunc should return intrinsic size
@@ -337,7 +344,7 @@ function layoutNode(
     // Use cached measure to avoid redundant calls within a layout pass
     const measured = node.cachedMeasure(measureWidth, widthMode, measureHeight, heightMode)!
 
-    if (widthIsAuto) {
+    if (widthIsAuto || widthIsFitContent) {
       nodeWidth = measured.width + innerLeft + innerRight
     }
     if (heightIsAuto) {
@@ -354,7 +361,7 @@ function layoutNode(
   // Handle leaf nodes without measureFunc - when unconstrained, use padding+border as intrinsic size
   if (node.children.length === 0) {
     // For leaf nodes without measureFunc, intrinsic size is just padding+border
-    if (Number.isNaN(nodeWidth)) {
+    if (Number.isNaN(nodeWidth) || isFitContentWidth) {
       nodeWidth = innerLeft + innerRight
     }
     if (Number.isNaN(nodeHeight)) {
@@ -580,6 +587,13 @@ function layoutNode(
     let shrink = childStyle.flexShrink
     if (childStyle.overflow !== C.OVERFLOW_VISIBLE) shrink = Math.max(shrink, 1)
     if (child.hasMeasureFunc() && childStyle.flexGrow > 0) shrink = Math.max(shrink, 1)
+    // Fit-content children must shrink when they exceed available space.
+    // CSS fit-content = min(max-content, available) — the child should never
+    // overflow the parent when there's negative free space.
+    const mainDim = isRow ? childStyle.width : childStyle.height
+    if (mainDim.unit === C.UNIT_FIT_CONTENT || mainDim.unit === C.UNIT_SNUG_CONTENT) {
+      shrink = Math.max(shrink, 1)
+    }
     cflex.flexShrink = shrink
 
     // Store base and main size (start from base size - distribution happens from here)
@@ -1257,6 +1271,9 @@ function layoutNode(
       } else if (crossDim.unit === C.UNIT_PERCENT) {
         // Percent of PARENT's cross axis (resolveValue handles NaN -> 0)
         childCrossSize = resolveValue(crossDim, crossAxisSize)
+      } else if (crossDim.unit === C.UNIT_FIT_CONTENT || crossDim.unit === C.UNIT_SNUG_CONTENT) {
+        // Fit-content on cross axis: shrink-wrap to content, don't stretch
+        childCrossSize = NaN
       } else if (parentHasDefiniteCross && alignment === C.ALIGN_STRETCH) {
         // Stretch alignment with definite parent cross size - fill the line's cross axis
         // For wrapping layouts, stretch to line cross size, not full container cross size
@@ -1460,7 +1477,10 @@ function layoutNode(
       // Check if cross axis is auto-sized (needed for deciding what to pass to layoutNode)
       const crossDimForLayoutCall = isRow ? childStyle.height : childStyle.width
       const crossIsAutoForLayoutCall =
-        crossDimForLayoutCall.unit === C.UNIT_AUTO || crossDimForLayoutCall.unit === C.UNIT_UNDEFINED
+        crossDimForLayoutCall.unit === C.UNIT_AUTO ||
+        crossDimForLayoutCall.unit === C.UNIT_UNDEFINED ||
+        crossDimForLayoutCall.unit === C.UNIT_FIT_CONTENT ||
+        crossDimForLayoutCall.unit === C.UNIT_SNUG_CONTENT
       const mainDimForLayoutCall = isRow ? childStyle.width : childStyle.height
       const mainIsPercentForLayoutCall = mainDimForLayoutCall.unit === C.UNIT_PERCENT
       const crossIsPercentForLayoutCall = crossDimForLayoutCall.unit === C.UNIT_PERCENT
@@ -1484,26 +1504,34 @@ function layoutNode(
       // would recompute with NaN and get a different result.
       const flexDistChanged = child.flex.mainSize !== child.flex.baseSize
       const hasMeasureLeaf = child.hasMeasureFunc() && child.children.length === 0
+      // For fit-content on cross axis, pass the parent's available cross size
+      // so the child can compute min(intrinsic, available).
+      const crossIsFitContent =
+        crossDimForLayoutCall.unit === C.UNIT_FIT_CONTENT || crossDimForLayoutCall.unit === C.UNIT_SNUG_CONTENT
       const passWidthToChild =
         isRow && mainIsAutoChild && !hasFlexGrow && !flexDistChanged && !hasMeasureLeaf
           ? NaN
-          : !isRow && crossIsAutoForLayoutCall && !parentHasDefiniteCross
+          : !isRow && crossIsAutoForLayoutCall && !parentHasDefiniteCross && !crossIsFitContent
             ? NaN
             : isRow && mainIsPercentForLayoutCall
               ? mainAxisSize
               : !isRow && crossIsPercentForLayoutCall
                 ? crossAxisSize
-                : childWidth
+                : !isRow && crossIsFitContent
+                  ? crossAxisSize
+                  : childWidth
       const passHeightToChild =
         !isRow && mainIsAutoChild && !hasFlexGrow && !flexDistChanged && !hasMeasureLeaf
           ? NaN
-          : isRow && crossIsAutoForLayoutCall && !parentHasDefiniteCross
+          : isRow && crossIsAutoForLayoutCall && !parentHasDefiniteCross && !crossIsFitContent
             ? NaN
             : !isRow && mainIsPercentForLayoutCall
               ? mainAxisSize
               : isRow && crossIsPercentForLayoutCall
                 ? crossAxisSize
-                : childHeight
+                : isRow && crossIsFitContent
+                  ? crossAxisSize
+                  : childHeight
 
       // Recurse to layout any grandchildren
       // Pass the child's FLOAT absolute position (margin box start, before child's own margin)
@@ -1547,16 +1575,23 @@ function layoutNode(
       // Cross axis: only override for explicit sizing or when we have a real constraint
       // For auto-sized children, let layoutNode determine the size
       const crossDimForCheck = isRow ? childStyle.height : childStyle.width
-      const crossIsAuto = crossDimForCheck.unit === C.UNIT_AUTO || crossDimForCheck.unit === C.UNIT_UNDEFINED
+      const crossDimIsFitContent =
+        crossDimForCheck.unit === C.UNIT_FIT_CONTENT || crossDimForCheck.unit === C.UNIT_SNUG_CONTENT
+      const crossIsAuto =
+        crossDimForCheck.unit === C.UNIT_AUTO ||
+        crossDimForCheck.unit === C.UNIT_UNDEFINED ||
+        crossDimIsFitContent
       // Only override if child has explicit sizing OR parent has explicit cross size
       // When parent has auto cross size, let children shrink-wrap first
       // Note: parentCrossDim and parentHasDefiniteCross already computed above
       const parentCrossIsAuto = !parentHasDefiniteCross
       // Also check if childCrossSize was constrained by min/max - if so, we should override
       const hasCrossMinMax = crossMinVal.unit !== C.UNIT_UNDEFINED || crossMaxVal.unit !== C.UNIT_UNDEFINED
+      // Fit-content children determine their own cross-axis size via layoutNode
+      // (shrink-wrap to content). Don't override with the parent's stretch.
       const shouldOverrideCross =
         !crossIsAuto ||
-        (!parentCrossIsAuto && alignment === C.ALIGN_STRETCH) ||
+        (!crossDimIsFitContent && !parentCrossIsAuto && alignment === C.ALIGN_STRETCH) ||
         (hasCrossMinMax && !Number.isNaN(childCrossSize))
       if (shouldOverrideCross) {
         if (isRow) {
@@ -1756,6 +1791,21 @@ function layoutNode(
     ) {
       // Auto-width column: shrink-wrap to total cross size (accounts for multi-line)
       nodeWidth = totalCrossSize + innerLeft + innerRight
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // PHASE 9a: Fit-content clamping
+  // -----------------------------------------------------------------------
+  // CSS fit-content = min(max-content, max(min-content, available-width)).
+  // Phase 3 set nodeWidth = available - margins, so children were laid out
+  // within that constraint. Phase 9 shrink-wrapped to actual content.
+  // Normally actualUsedMain <= contentWidth, so nodeWidth <= available.
+  // Safety clamp for edge cases where children overflow (explicit widths).
+  if (isFitContentWidth && !Number.isNaN(nodeWidth) && !Number.isNaN(availableWidth)) {
+    const availForNode = availableWidth - marginLeft - marginRight
+    if (availForNode >= 0 && nodeWidth > availForNode) {
+      nodeWidth = availForNode
     }
   }
 

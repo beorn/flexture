@@ -61,6 +61,9 @@ export function measureNode(
   const borderBottom = resolveEdgeBorderValue(style.border, 3, style.flexDirection, direction)
 
   // Calculate node dimensions
+  // FIT_CONTENT and SNUG_CONTENT resolve the same as AUTO — available - margins
+  // (when constrained) or NaN (when unconstrained). The consuming layout pass
+  // handles the shrink-wrap + clamp semantics.
   let nodeWidth: number
   if (style.width.unit === C.UNIT_POINT) {
     nodeWidth = style.width.value

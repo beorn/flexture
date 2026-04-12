@@ -80,3 +80,5 @@ export const UNIT_UNDEFINED = 0
 export const UNIT_POINT = 1
 export const UNIT_PERCENT = 2
 export const UNIT_AUTO = 3
+export const UNIT_FIT_CONTENT = 4
+export const UNIT_SNUG_CONTENT = 5
