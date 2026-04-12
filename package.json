@@ -53,16 +53,6 @@
       }
     }
   },
-  "tsdown": {
-    "entry": [
-      "src/index.ts",
-      "src/index-classic.ts",
-      "src/testing.ts"
-    ],
-    "format": "esm",
-    "dts": true,
-    "clean": true
-  },
   "scripts": {
     "build": "tsdown",
     "test": "bun test",
@@ -84,6 +74,16 @@
     "vitepress-plugin-llms": "^1.0.0",
     "vitest": "^3.1.0",
     "yoga-wasm-web": "^0.3.3"
+  },
+  "tsdown": {
+    "clean": true,
+    "dts": true,
+    "entry": [
+      "src/index.ts",
+      "src/index-classic.ts",
+      "src/testing.ts"
+    ],
+    "format": "esm"
   },
   "engines": {
     "bun": ">=1.0",
