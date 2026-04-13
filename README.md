@@ -1,9 +1,9 @@
+[![npm version](https://img.shields.io/npm/v/flexily.svg)](https://www.npmjs.com/package/flexily)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 # Flexily
 
 **Pure JavaScript flexbox layout engine with Yoga-compatible API.**
-
-[![npm version](https://img.shields.io/npm/v/flexily.svg)](https://www.npmjs.com/package/flexily)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 **Composable API** (recommended):
 
