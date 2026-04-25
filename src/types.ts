@@ -235,8 +235,12 @@ export function createDefaultStyle(preset: DefaultsPreset = DEFAULT_PRESET): Sty
     justifyContent: 0, // JUSTIFY_FLEX_START (same in CSS and Yoga)
     width: createValue(0, 3), // AUTO (same in CSS and Yoga)
     height: createValue(0, 3), // AUTO (same in CSS and Yoga)
-    minWidth: createValue(),
-    minHeight: createValue(),
+    // CSS §4.5: flex items default to `min-block-size: auto` and `min-inline-size: auto`.
+    // The auto value resolves to a content-based minimum on the main axis (visible-
+    // overflow items only) — see layout-zero.ts. Yoga preset preserves UNIT_UNDEFINED
+    // (treated as 0) for drop-in compat with yoga-layout's looser semantics.
+    minWidth: isCss ? createValue(0, 3) : createValue(), // CSS: AUTO — Yoga: undefined
+    minHeight: isCss ? createValue(0, 3) : createValue(), // CSS: AUTO — Yoga: undefined
     maxWidth: createValue(),
     maxHeight: createValue(),
     aspectRatio: NaN, // undefined by default (same in CSS and Yoga)

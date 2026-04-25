@@ -173,6 +173,11 @@ export function resolveValue(value: Value, availableSize: number): number {
       }
       return availableSize * (value.value / 100)
     default:
+      // UNIT_UNDEFINED, UNIT_AUTO, UNIT_FIT_CONTENT, UNIT_SNUG_CONTENT all
+      // resolve to 0 here. Callers that need auto-rule semantics (CSS §4.5
+      // flex-item main-axis auto min-size = content-based minimum) must
+      // handle UNIT_AUTO explicitly before calling resolveValue. See
+      // layout-zero.ts:587 for that special case.
       return 0
   }
 }

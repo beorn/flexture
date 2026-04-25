@@ -566,9 +566,50 @@ function layoutNode(
     }
 
     // Min/max on main axis
+    //
+    // CSS §4.5 "Implied Minimum Size of Flex Items" — implemented in common
+    // cases under the CSS preset, using `baseSize` as a content-size proxy.
+    //
+    // Rule: when a flex item's main-axis min-size is `auto` (CSS default for
+    // flex items), the used value is the item's content-based minimum size,
+    // UNLESS the item itself is a scroll container (overflow != visible),
+    // in which case it resolves to 0 so clipping works as intended.
+    //
+    // Yoga preset: min unit is UNDEFINED → 0 (no auto floor — matches Yoga).
+    // CSS preset: min unit is AUTO → content-based floor (matches browsers).
+    //
+    // Known approximation gaps (pro review 2026-04-25, bead km-flexily.auto-min-size-flex-items):
+    //  - `flex-basis: 0` / `flex: 1`: baseSize comes from the explicit
+    //    flex-basis (= 0), so auto-min collapses to 0 instead of preserving
+    //    content. Fix would require deriving a separate content-size
+    //    independent of flex-basis.
+    //  - Wrapping row text: baseSize is max-content width, not min-content
+    //    (longest unbreakable word). Items become too rigid horizontally.
+    //  - Aspect-ratio / replaced-element transferred sizes — not yet folded in.
+    // For the targeted silvery scroll regression (column layouts with rigid
+    // single-line items), baseSize is the right answer.
+    //
+    // The result is clamped by any definite max-* below — CSS spec: when
+    // min > max, min wins, but the auto-derived "specified size suggestion"
+    // already includes max-clamping per the spec.
     const minVal = isRow ? childStyle.minWidth : childStyle.minHeight
     const maxVal = isRow ? childStyle.maxWidth : childStyle.maxHeight
-    cflex.minMain = minVal.unit !== C.UNIT_UNDEFINED ? resolveValue(minVal, mainAxisSize) : 0
+    if (minVal.unit === C.UNIT_AUTO) {
+      let autoMin = childStyle.overflow === C.OVERFLOW_VISIBLE ? baseSize : 0
+      // Clamp by definite max-* (CSS spec: auto min-size includes a "specified
+      // size suggestion" that's bounded by max-* if specified).
+      if (maxVal.unit === C.UNIT_POINT || maxVal.unit === C.UNIT_PERCENT) {
+        const maxResolved = resolveValue(maxVal, mainAxisSize)
+        if (!Number.isNaN(maxResolved) && maxResolved !== Infinity) {
+          autoMin = Math.min(autoMin, maxResolved)
+        }
+      }
+      cflex.minMain = autoMin
+    } else if (minVal.unit !== C.UNIT_UNDEFINED) {
+      cflex.minMain = resolveValue(minVal, mainAxisSize)
+    } else {
+      cflex.minMain = 0
+    }
     cflex.maxMain = maxVal.unit !== C.UNIT_UNDEFINED ? resolveValue(maxVal, mainAxisSize) : Infinity
 
     // Store flex factors from style

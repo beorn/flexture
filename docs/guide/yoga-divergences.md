@@ -6,12 +6,12 @@ Flexily is Yoga-compatible but intentionally diverges where Yoga deviates from t
 
 ## Summary
 
-| Behavior                                  | Yoga                               | Flexily                                  | CSS Spec                                                  |
-| ----------------------------------------- | ---------------------------------- | ---------------------------------------- | --------------------------------------------------------- |
-| Default `flexDirection`                   | Column                             | **Row** (CSS default)                    | Row                                                       |
-| `overflow:hidden/scroll` + `flexShrink:0` | Item expands to content size       | **Item shrinks to fit parent**           | Section 4.5: `min-size: auto = 0` for overflow containers |
-| `aspect-ratio` + implicit `stretch`       | Stretch overrides AR on cross-axis | **AR fallback alignment = `flex-start`** | CSS Alignment: AR prevents implicit stretch               |
-| **Flex item default min-size**            | `0` (no auto floor)                | `0` today (Yoga shape) — **planned: content-based minimum under CSS preset** | Section 4.5: `min-block-size: auto = content-based minimum` |
+| Behavior                                  | Yoga                               | Flexily                                                                      | CSS Spec                                                    |
+| ----------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Default `flexDirection`                   | Column                             | **Row** (CSS default)                                                        | Row                                                         |
+| `overflow:hidden/scroll` + `flexShrink:0` | Item expands to content size       | **Item shrinks to fit parent**                                               | Section 4.5: `min-size: auto = 0` for overflow containers   |
+| `aspect-ratio` + implicit `stretch`       | Stretch overrides AR on cross-axis | **AR fallback alignment = `flex-start`**                                     | CSS Alignment: AR prevents implicit stretch                 |
+| **Flex item default min-size**            | `0` (no auto floor)                | CSS preset: content-based minimum (auto rule); Yoga preset: `0`              | Section 4.5: `min-block-size: auto = content-based minimum` |
 
 ## Divergence 1: Default Flex Direction
 
@@ -78,26 +78,51 @@ If you're **migrating from Yoga**, these are the cases to check:
 
 If you're **starting fresh**, Flexily's defaults match CSS spec and browser behavior, so you shouldn't encounter surprises.
 
-## Known Gap: Flex-Item Automatic Minimum Size (CSS §4.5, item-side rule)
+## Divergence 4: Flex-Item Automatic Minimum Size (CSS §4.5, item-side rule)
 
 CSS Flexbox §4.5 has **two complementary rules** about automatic minimum size:
 
-1. **Container side** — overflow containers (`overflow: hidden/scroll`) get `min-size: auto = 0`, so they can shrink to fit a constrained parent. Flexily implements this (see Divergence 2).
-2. **Item side** — flex items get `min-block-size: auto = content-based minimum` (≈ `min-content`), so they can't shrink below their own intrinsic content size. **Flexily does not yet implement this.** Yoga also doesn't.
+1. **Container side** — overflow containers (`overflow: hidden/scroll/auto`) get `min-size: auto = 0`, so they can shrink to fit a constrained parent. Flexily implements this (see Divergence 2).
+2. **Item side** — flex items get `min-block-size: auto = content-based minimum` (≈ `min-content`), so they can't shrink below their own intrinsic content size.
 
-Today's behavior in flexily: when a flex item's `min-width`/`min-height` is unspecified (the default), the algorithm treats the floor as `0`. With `flexShrink: 0` (Yoga default), this is invisible because items never shrink. With `flexShrink: 1` (CSS default), items can shrink all the way to zero — which is the wrong-by-default behavior browsers protect against via the auto min-size rule.
+**Flexily's behavior** (under CSS preset): both rules are implemented. With `createFlexily({ defaults: "css" })` or `Node.create({ defaults: "css" })`, `minWidth`/`minHeight` default to `UNIT_AUTO`, which the layout algorithm interprets as content-based minimum on the main axis (or 0 if the item itself has non-visible overflow, per the spec). Yoga preset preserves the looser `min: undefined → 0` behavior for drop-in Yoga compatibility.
 
-**Why this matters when you adopt CSS-correct defaults**: scroll containers, list rows, and any column flex layout where children should keep their intrinsic height require an explicit `min-height={content-size}` (or `min-height={1}` in a TUI) to behave the way the browser would by default. Without the rule, a 6-row scroll window holding 10 1-line items collapses each to 0.6 rows instead of producing 10 lines of scrollable content.
+**Why this matters**: scroll containers, list rows, and any column flex layout where children should keep their intrinsic height work correctly under CSS preset out of the box. Items don't shrink to zero rows when the container is over-full; instead, content overflows and the scroll container handles it as expected. This is what browser flexbox does by default.
 
-**Tracking**: `km-flexily.auto-min-size-flex-items`. Implementation will be gated on the CSS preset (`createFlexily({ defaults: "css" })`) — the Yoga preset preserves `min = 0` for drop-in Yoga compatibility.
+```typescript
+// Under Yoga preset: items shrink to nothing when flexShrink:1 + container too small.
+// Under CSS preset: items keep content height; container scrolls correctly.
+const flex = createFlexily({ defaults: "css" })
+const root = flex.createNode()
+root.setFlexDirection(FLEX_DIRECTION_COLUMN)
+root.setHeight(6)
 
-**Workaround until then** (under CSS preset): set explicit `minHeight` (column main axis) or `minWidth` (row main axis) on flex items that should keep their content size. Or stay on the Yoga preset.
+for (let i = 0; i < 10; i++) {
+  const item = flex.createNode()
+  item.setHeight(1)
+  root.insertChild(item, i)
+}
+flex.calculateLayout(root, 40, 6)
+// Each item.getComputedHeight() === 1 — content preserved despite container
+// being smaller than total content. Yoga preset would collapse each to 0.6.
+```
+
+**Known approximation gaps** (tracked by `km-flexily.auto-min-size-flex-items`): the rule uses `baseSize` (the flex base size) as a proxy for content-based minimum. Two known gaps:
+
+- `flex: 1 1 0` (or any explicit `flex-basis: 0`) collapses auto-min to 0 instead of preserving content. CSS would compute min-content separately from flex-basis.
+- Wrapping row text: `baseSize` is max-content (full text width), not min-content (longest unbreakable word). Items become more rigid horizontally than CSS would.
+
+For the failing scroll-container case (column layouts with single-line items), the proxy is exact. Refinements to handle the gaps above are tracked as follow-ups.
+
+**Test coverage**: See `tests/auto-min-size.test.ts`.
+
+**Workaround when the gap matters**: set explicit `minHeight`/`minWidth` (or `minHeight: 0` to opt into shrinking, matching the canonical CSS escape hatch).
 
 **Spec reference**: <https://www.w3.org/TR/css-flexbox-1/#min-size-auto>
 
 ## What's Intentional vs What's a Bug
 
-The divergences listed in the Summary table are **intentional** and tested. The Known Gap above is a planned addition, not a deliberate divergence — it tracks parity with CSS that flexily has not yet shipped.
+The divergences listed in the Summary table are **intentional** and tested. Divergence 4 (flex-item auto min-size) ships gated on the CSS preset; the Yoga preset preserves Yoga-compatible behavior.
 
 If Flexily produces different output from Yoga in a case not listed here, it may be a bug -- please [file an issue](https://github.com/beorn/flexily/issues).
 

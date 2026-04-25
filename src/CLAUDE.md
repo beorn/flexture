@@ -346,24 +346,45 @@ silvery calls `calculateLayout()` on every render. The no-change case (cursor mo
 
 ## Intentional Divergences from Yoga
 
-| Behavior                                  | Yoga                                     | Flexily                                    | CSS Spec                                       |
-| ----------------------------------------- | ---------------------------------------- | ------------------------------------------ | ---------------------------------------------- |
-| `overflow:hidden/scroll` + `flexShrink:0` | Item expands to content (ignores parent) | Item shrinks to fit parent                 | 4.5: auto min-size = 0 for overflow containers |
-| Default `flexShrink`                      | 0 (Yoga native default)                  | Preset: 0 (yoga) or 1 (css)                | CSS default is 1                               |
-| Default `alignContent`                    | flex-start                               | Preset: flex-start (yoga) or stretch (css) | stretch                                        |
-| Default `flexDirection`                   | Column                                   | Row (CSS default)                          | Row                                            |
-| Baseline alignment                        | Full spec (recursive first-child)        | Simplified (no recursive propagation)      | Recursive first-child                          |
-| **Flex-item default min-size**            | `0` (no auto floor)                      | `0` today (Yoga shape)                     | §4.5 item rule: `min-block-size: auto = content-based minimum` |
+| Behavior                                  | Yoga                                     | Flexily                                    | CSS Spec                                                       |
+| ----------------------------------------- | ---------------------------------------- | ------------------------------------------ | -------------------------------------------------------------- |
+| `overflow:hidden/scroll` + `flexShrink:0` | Item expands to content (ignores parent) | Item shrinks to fit parent                 | 4.5: auto min-size = 0 for overflow containers                 |
+| Default `flexShrink`                      | 0 (Yoga native default)                  | Preset: 0 (yoga) or 1 (css)                | CSS default is 1                                               |
+| Default `alignContent`                    | flex-start                               | Preset: flex-start (yoga) or stretch (css) | stretch                                                        |
+| Default `flexDirection`                   | Column                                   | Row (CSS default)                          | Row                                                            |
+| Baseline alignment                        | Full spec (recursive first-child)        | Simplified (no recursive propagation)      | Recursive first-child                                          |
+| **Flex-item default min-size**            | `0` (no auto floor)                      | CSS preset: content-based min; Yoga: `0`   | §4.5 item rule: `min-block-size: auto = content-based minimum` |
 
-The `flexShrink` override for overflow containers (line ~1244 in layout-zero.ts) is the most significant divergence. Without it, `overflow:hidden` children inside constrained parents balloon to content size, defeating the purpose of clipping.
+The `flexShrink` override for overflow containers (line ~1244 in layout-zero.ts) is the most significant *container-side* divergence. Without it, `overflow:hidden` children inside constrained parents balloon to content size, defeating the purpose of clipping.
 
-### Known gap: flex-item auto min-size (CSS §4.5, item-side)
+### Flex-item auto min-size (CSS §4.5, item-side rule — shipped under CSS preset)
 
-CSS §4.5 has two complementary rules: the *container* side (overflow containers get `min-size: auto = 0`, implemented around layout-zero.ts:587) and the *item* side (flex items default to `min-block-size: auto = content-based minimum`, **not implemented**). Today, when a flex item's `min-width`/`min-height` is unspecified, layout-zero.ts:571 falls back to `0` instead of the content-based minimum.
+CSS §4.5 has two complementary rules: the *container* side (overflow containers get `min-size: auto = 0`, implemented around layout-zero.ts:587) and the *item* side (flex items default to `min-block-size: auto = content-based minimum`).
 
-Under Yoga preset (`flexShrink: 0`) this is invisible — items never shrink. Under CSS preset (`flexShrink: 1`) items can shrink to zero, which is the wrong-by-default behavior browsers protect against via the auto min-size rule.
+Both are now implemented. The item-side rule lives at layout-zero.ts in the `Min/max on main axis` block (search for `UNIT_AUTO`):
 
-Implementation lives in the same path that already computes intrinsic sizes (`baseSize` from measureFunc / measureNode); the change is local to layout-zero.ts:571 and gated on the CSS preset so Yoga consumers stay unaffected. Tracked by bead `km-flexily.auto-min-size-flex-items`.
+```typescript
+if (minVal.unit === C.UNIT_AUTO) {
+  let autoMin = childStyle.overflow === C.OVERFLOW_VISIBLE ? baseSize : 0
+  // Clamp by definite max-* (CSS specified-size suggestion bounded by max-*).
+  if (maxVal.unit === C.UNIT_POINT || maxVal.unit === C.UNIT_PERCENT) {
+    const maxResolved = resolveValue(maxVal, mainAxisSize)
+    if (!Number.isNaN(maxResolved) && maxResolved !== Infinity) {
+      autoMin = Math.min(autoMin, maxResolved)
+    }
+  }
+  cflex.minMain = autoMin
+}
+```
+
+Gating: CSS preset's `createDefaultStyle("css")` sets `minWidth`/`minHeight` to `UNIT_AUTO`. Yoga preset leaves them as `UNIT_UNDEFINED` → fall-through to `cflex.minMain = 0` (legacy behavior). Both presets share the explicit-value path.
+
+Known approximation gaps (tracked by `km-flexily.auto-min-size-flex-items`):
+- `flex-basis: 0` / `flex: 1`: `baseSize` from explicit flex-basis = 0, so auto-min collapses to 0 instead of preserving content. Documented in `tests/auto-min-size.test.ts` "known v1 gaps". A proper fix derives content-size separately from flex-basis.
+- Wrapping row text: `baseSize` is max-content, not min-content (longest unbreakable word).
+- Aspect-ratio / replaced-element transferred sizes: not folded in.
+
+`resolveValue` returns 0 for `UNIT_AUTO` (default branch). For non-flex-item-main paths (root/cross-axis/measureNode min-clamp), this is correct CSS behavior — the auto-rule applies only to flex items on their main axis.
 
 **Defaults preset**: `createFlexily({ defaults: "css" | "yoga" })` and
 `Node.create({ defaults })` toggle `flexShrink`/`alignContent`. `DEFAULT_PRESET`
