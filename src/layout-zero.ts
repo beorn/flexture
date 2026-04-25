@@ -469,9 +469,7 @@ function layoutNode(
     const isFitContentEarly =
       childMainDimEarly.unit === C.UNIT_FIT_CONTENT || childMainDimEarly.unit === C.UNIT_SNUG_CONTENT
     const autoMinNeedsContent =
-      minValEarly.unit === C.UNIT_AUTO &&
-      childStyle.overflow === C.OVERFLOW_VISIBLE &&
-      !isFitContentEarly
+      minValEarly.unit === C.UNIT_AUTO && childStyle.overflow === C.OVERFLOW_VISIBLE && !isFitContentEarly
     let baseSize = 0
     let contentMinSize = 0
     if (childStyle.flexBasis.unit === C.UNIT_POINT) {

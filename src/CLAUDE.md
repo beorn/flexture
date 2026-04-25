@@ -355,11 +355,11 @@ silvery calls `calculateLayout()` on every render. The no-change case (cursor mo
 | Baseline alignment                        | Full spec (recursive first-child)        | Simplified (no recursive propagation)      | Recursive first-child                                          |
 | **Flex-item default min-size**            | `0` (no auto floor)                      | CSS preset: content-based min; Yoga: `0`   | §4.5 item rule: `min-block-size: auto = content-based minimum` |
 
-The `flexShrink` override for overflow containers (line ~1244 in layout-zero.ts) is the most significant *container-side* divergence. Without it, `overflow:hidden` children inside constrained parents balloon to content size, defeating the purpose of clipping.
+The `flexShrink` override for overflow containers (line ~1244 in layout-zero.ts) is the most significant _container-side_ divergence. Without it, `overflow:hidden` children inside constrained parents balloon to content size, defeating the purpose of clipping.
 
 ### Flex-item auto min-size (CSS §4.5, item-side rule — shipped under CSS preset)
 
-CSS §4.5 has two complementary rules: the *container* side (overflow containers get `min-size: auto = 0`, implemented around layout-zero.ts:587) and the *item* side (flex items default to `min-block-size: auto = content-based minimum`).
+CSS §4.5 has two complementary rules: the _container_ side (overflow containers get `min-size: auto = 0`, implemented around layout-zero.ts:587) and the _item_ side (flex items default to `min-block-size: auto = content-based minimum`).
 
 Both are now implemented. The item-side rule lives at layout-zero.ts in the `Min/max on main axis` block (search for `UNIT_AUTO`):
 
@@ -388,10 +388,11 @@ needs content size in both cases.
 
 Solution: track `contentMinSize` separately from `baseSize`. Computed only
 when auto-min applies (gating: `minVal.unit === UNIT_AUTO` + visible overflow
-+ not fit-content), so the extra measureFunc call is skipped in the common
-case. For measureFunc nodes with definite flex-basis, the same `cachedMeasure`
-call as the flex-basis-auto path re-derives content; the cache amortizes
-when both calls land on the same args.
+
+- not fit-content), so the extra measureFunc call is skipped in the common
+  case. For measureFunc nodes with definite flex-basis, the same `cachedMeasure`
+  call as the flex-basis-auto path re-derives content; the cache amortizes
+  when both calls land on the same args.
 
 ### Remaining approximation gaps (smaller, deferred)
 

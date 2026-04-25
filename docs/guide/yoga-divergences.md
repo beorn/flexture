@@ -6,12 +6,12 @@ Flexily is Yoga-compatible but intentionally diverges where Yoga deviates from t
 
 ## Summary
 
-| Behavior                                  | Yoga                               | Flexily                                                                      | CSS Spec                                                    |
-| ----------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| Default `flexDirection`                   | Column                             | **Row** (CSS default)                                                        | Row                                                         |
-| `overflow:hidden/scroll` + `flexShrink:0` | Item expands to content size       | **Item shrinks to fit parent**                                               | Section 4.5: `min-size: auto = 0` for overflow containers   |
-| `aspect-ratio` + implicit `stretch`       | Stretch overrides AR on cross-axis | **AR fallback alignment = `flex-start`**                                     | CSS Alignment: AR prevents implicit stretch                 |
-| **Flex item default min-size**            | `0` (no auto floor)                | CSS preset: content-based minimum (auto rule); Yoga preset: `0`              | Section 4.5: `min-block-size: auto = content-based minimum` |
+| Behavior                                  | Yoga                               | Flexily                                                         | CSS Spec                                                    |
+| ----------------------------------------- | ---------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------- |
+| Default `flexDirection`                   | Column                             | **Row** (CSS default)                                           | Row                                                         |
+| `overflow:hidden/scroll` + `flexShrink:0` | Item expands to content size       | **Item shrinks to fit parent**                                  | Section 4.5: `min-size: auto = 0` for overflow containers   |
+| `aspect-ratio` + implicit `stretch`       | Stretch overrides AR on cross-axis | **AR fallback alignment = `flex-start`**                        | CSS Alignment: AR prevents implicit stretch                 |
+| **Flex item default min-size**            | `0` (no auto floor)                | CSS preset: content-based minimum (auto rule); Yoga preset: `0` | Section 4.5: `min-block-size: auto = content-based minimum` |
 
 ## Divergence 1: Default Flex Direction
 
