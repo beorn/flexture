@@ -107,12 +107,15 @@ flex.calculateLayout(root, 40, 6)
 // being smaller than total content. Yoga preset would collapse each to 0.6.
 ```
 
-**Known approximation gaps** (tracked by `km-flexily.auto-min-size-flex-items`): the rule uses `baseSize` (the flex base size) as a proxy for content-based minimum. Two known gaps:
+**Implementation detail**: `contentMinSize` is derived alongside `baseSize` and used as the content-based minimum. When `flex-basis` is auto, `contentMinSize === baseSize`. When `flex-basis` is definite (e.g. `flex: 1 1 0`), `contentMinSize` is re-derived via `measureFunc` so auto-min doesn't collapse to 0.
 
-- `flex: 1 1 0` (or any explicit `flex-basis: 0`) collapses auto-min to 0 instead of preserving content. CSS would compute min-content separately from flex-basis.
-- Wrapping row text: `baseSize` is max-content (full text width), not min-content (longest unbreakable word). Items become more rigid horizontally than CSS would.
+**Remaining approximation gaps** (smaller, deferred):
 
-For the failing scroll-container case (column layouts with single-line items), the proxy is exact. Refinements to handle the gaps above are tracked as follow-ups.
+- Wrapping row text: `contentMinSize` returns max-content from `measureFunc`, not min-content (longest unbreakable word). Items become more rigid horizontally than browsers would.
+- Nodes-with-children with definite `flex-basis`: falls back to `baseSize` rather than re-running recursive layout for content-min.
+- Aspect-ratio / replaced-element transferred-size suggestions: not folded in.
+
+For the targeted scroll-container case (column layouts with rigid intrinsic items) and the `flex: 1 1 0` pattern with measureFunc text, the rule produces CSS-correct results.
 
 **Test coverage**: See `tests/auto-min-size.test.ts`.
 

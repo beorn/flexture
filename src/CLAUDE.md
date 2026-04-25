@@ -379,12 +379,34 @@ if (minVal.unit === C.UNIT_AUTO) {
 
 Gating: CSS preset's `createDefaultStyle("css")` sets `minWidth`/`minHeight` to `UNIT_AUTO`. Yoga preset leaves them as `UNIT_UNDEFINED` → fall-through to `cflex.minMain = 0` (legacy behavior). Both presets share the explicit-value path.
 
-Known approximation gaps (tracked by `km-flexily.auto-min-size-flex-items`):
-- `flex-basis: 0` / `flex: 1`: `baseSize` from explicit flex-basis = 0, so auto-min collapses to 0 instead of preserving content. Documented in `tests/auto-min-size.test.ts` "known v1 gaps". A proper fix derives content-size separately from flex-basis.
-- Wrapping row text: `baseSize` is max-content, not min-content (longest unbreakable word).
-- Aspect-ratio / replaced-element transferred sizes: not folded in.
+### Implementation note: `contentMinSize` (handles `flex: 1 1 0`)
 
-`resolveValue` returns 0 for `UNIT_AUTO` (default branch). For non-flex-item-main paths (root/cross-axis/measureNode min-clamp), this is correct CSS behavior — the auto-rule applies only to flex items on their main axis.
+When flex-basis is auto, baseSize equals content size and works directly as
+the auto-min content proxy. When flex-basis is definite (e.g. `flex: 1 1 0`
+where flex-basis = 0), baseSize comes from flex-basis, NOT content. Auto-min
+needs content size in both cases.
+
+Solution: track `contentMinSize` separately from `baseSize`. Computed only
+when auto-min applies (gating: `minVal.unit === UNIT_AUTO` + visible overflow
++ not fit-content), so the extra measureFunc call is skipped in the common
+case. For measureFunc nodes with definite flex-basis, the same `cachedMeasure`
+call as the flex-basis-auto path re-derives content; the cache amortizes
+when both calls land on the same args.
+
+### Remaining approximation gaps (smaller, deferred)
+
+- Wrapping row text: `contentMinSize` from measureFunc returns max-content
+  (full text width); CSS spec wants min-content (longest unbreakable word).
+  Items become more rigid horizontally than browsers would.
+- Nodes-with-children with definite flex-basis: falls back to `baseSize`
+  rather than re-running recursive layout for content-min separately.
+- Aspect-ratio / replaced-element transferred-size suggestions: not folded in.
+
+### `UNIT_AUTO` semantics outside flex-item-main
+
+`resolveValue` returns 0 for `UNIT_AUTO` (default branch). For non-flex-item-main
+paths (root/cross-axis/measureNode min-clamp), this is correct CSS behavior —
+the auto-rule applies only to flex items on their main axis.
 
 **Defaults preset**: `createFlexily({ defaults: "css" | "yoga" })` and
 `Node.create({ defaults })` toggle `flexShrink`/`alignContent`. `DEFAULT_PRESET`
