@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Node.getMinContent(direction)` — recursive intrinsic min-content as a property of every node. Container min-content is derived from children (sum on main axis, max on cross axis); leaf measureFunc nodes query the measurer with `MEASURE_MODE_MIN_CONTENT`. Cached per-node alongside the existing measure cache; invalidated by `markDirty()`, `insertChild`/`removeChild`, and intrinsic-affecting style setters (padding / border / gap / flexDirection).
+
+### Changed
+
+- **CSS §4.5 auto-min-size for containers**: container nodes now use spec-correct recursive min-content instead of the prior `baseSize` (max-content) approximation. `Box` wrappers around `<Text wrap="wrap">` no longer pin sibling content at the longest unbreakable word — the row shrinks to its true min-content. Includes the CSS §4.5 specified-size suggestion cap so `flexBasis: 0` / `flex: 1 1 0` Fill-leader patterns continue to behave as expected (auto-min = `min(content-min, specified-size)`). Yoga preset is unaffected. `setMinWidth(0)` remains the canonical CSS escape hatch for non-wrappable Text and for containers narrower than their longest unbreakable word.
+
 ## [0.5.1] - 2026-04-09
 
 ### Changed
