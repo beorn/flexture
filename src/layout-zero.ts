@@ -781,17 +781,28 @@ function layoutNode(
     cflex.flexGrow = childStyle.flexGrow
     // CSS spec 4.5: overflow containers have automatic min-size = 0 and can shrink
     // below content size. Yoga defaults flexShrink to 0, preventing this. For
-    // overflow:hidden/scroll children, ensure flexShrink >= 1 so they participate
-    // in negative free space distribution (matching CSS behavior).
+    // overflow:hidden/scroll children where the consumer LEFT flexShrink at
+    // its default, force shrink >= 1 so they participate in negative free
+    // space distribution (matching CSS behavior). When the consumer
+    // EXPLICITLY set flexShrink (including to 0 for "rigid"), honor that —
+    // the override is a Yoga→CSS bridge for default values, not a permission
+    // to clobber explicit user intent. See bead
+    // km-silvercode.layout-corrupt-during-stream-with-queue: a 1-col gutter
+    // Box(width=1, flexShrink=0, overflow=hidden) was being forced shrinkable
+    // and collapsed to width=0 when its row sibling had wrap-text content
+    // whose max-content baseSize exceeded the container.
     //
     // Measured items with flexGrow > 0 use max-content as base size (CSS section 9.2).
     // When their total base sizes exceed the container, they must be shrinkable so
     // the flex algorithm can distribute negative free space. Without this, a single
     // flexGrow text node whose content exceeds the container would overflow instead
-    // of filling the remaining space.
+    // of filling the remaining space. This is also gated on default flexShrink —
+    // an explicit `setFlexShrink(0)` on a flexGrow leaf is the user's "I am
+    // rigid" signal even when content exceeds the container.
     let shrink = childStyle.flexShrink
-    if (childStyle.overflow !== C.OVERFLOW_VISIBLE) shrink = Math.max(shrink, 1)
-    if (child.hasMeasureFunc() && childStyle.flexGrow > 0) shrink = Math.max(shrink, 1)
+    const explicitShrink = child.hasExplicitFlexShrink()
+    if (!explicitShrink && childStyle.overflow !== C.OVERFLOW_VISIBLE) shrink = Math.max(shrink, 1)
+    if (!explicitShrink && child.hasMeasureFunc() && childStyle.flexGrow > 0) shrink = Math.max(shrink, 1)
     // Fit-content children must shrink when they exceed available space.
     // CSS fit-content = min(max-content, available) — the child should never
     // overflow the parent when there's negative free space.

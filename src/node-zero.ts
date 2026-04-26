@@ -64,6 +64,21 @@ export class Node {
   private _lc0?: LayoutCacheEntry
   private _lc1?: LayoutCacheEntry
 
+  // Tracks whether `setFlexShrink()` was called by the consumer. Used by
+  // layout-zero.ts to gate the overflow-container flexShrink override:
+  // if the user explicitly set flexShrink (especially to 0 for "rigid"),
+  // we MUST respect that and not silently force shrink≥1. The override
+  // exists to bridge Yoga-default `flexShrink:0` → CSS-spec shrinking for
+  // overflow containers, but it should only fire when the consumer left
+  // the value at its default.
+  //
+  // Tracked separately from `_style.flexShrink` because the value 0 is
+  // ambiguous: under Yoga preset it's the default (auto-bridged), under
+  // CSS preset it's explicit. Without this flag, an explicit
+  // `setFlexShrink(0)` on an overflow=hidden Box gets clobbered to 1.
+  // See bead km-silvercode.layout-corrupt-during-stream-with-queue.
+  private _flexShrinkExplicit: boolean = false
+
   // Min-content cache — two slots for the two flex axes. Populated lazily by
   // getMinContent(direction). Cleared in markDirty() alongside the measure +
   // layout caches. Uses -1 as the invalidation sentinel (NOT NaN — NaN is a
@@ -1271,7 +1286,25 @@ export class Node {
    */
   setFlexShrink(value: number): void {
     this._style.flexShrink = value
+    this._flexShrinkExplicit = true
     this.markDirty()
+  }
+
+  /**
+   * Internal: has the consumer explicitly called `setFlexShrink()`?
+   *
+   * Used by layout-zero.ts to gate the overflow-container flexShrink
+   * override (CSS §4.5 bridge). When `true`, the override is suppressed —
+   * the user's value (including an explicit 0 for "rigid") is honored.
+   * When `false`, the override may force shrink≥1 for overflow containers
+   * to bridge Yoga's `flexShrink:0` default to CSS-spec shrinking.
+   *
+   * Not in the public API surface — adapters and consumers shouldn't
+   * depend on this distinction. See bead
+   * km-silvercode.layout-corrupt-during-stream-with-queue.
+   */
+  hasExplicitFlexShrink(): boolean {
+    return this._flexShrinkExplicit
   }
 
   /**
