@@ -7,13 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-05-09
+
 ### Added
 
 - `Node.getMinContent(direction)` — recursive intrinsic min-content as a property of every node. Container min-content is derived from children (sum on main axis, max on cross axis); leaf measureFunc nodes query the measurer with `MEASURE_MODE_MIN_CONTENT`. Cached per-node alongside the existing measure cache; invalidated by `markDirty()`, `insertChild`/`removeChild`, and intrinsic-affecting style setters (padding / border / gap / flexDirection).
+- `MEASURE_MODE_MIN_CONTENT` measure-mode constant — exported alongside the existing `MEASURE_MODE_UNDEFINED` / `MEASURE_MODE_EXACTLY` / `MEASURE_MODE_AT_MOST`. Required by leaf measurers that participate in the recursive min-content derivation. (The 0.6.0 release predated this export by two commits — npm consumers using `MEASURE_MODE_MIN_CONTENT` against 0.6.0 fail at build time with `MISSING_EXPORT`. 0.7.0 closes that gap.)
+- Aspect-ratio transferred-size + max-content content-min approximation.
+- CSS §4.5 flex-item auto min-size (item-side rule).
+- `flex-basis: 0` / `flex: 1 1 0` patterns handled correctly by auto-min-size.
+- CSS-vs-Yoga preset config (Phase 1, no flip — defaults still match Yoga).
 
 ### Changed
 
 - **CSS §4.5 auto-min-size for containers**: container nodes now use spec-correct recursive min-content instead of the prior `baseSize` (max-content) approximation. `Box` wrappers around `<Text wrap="wrap">` no longer pin sibling content at the longest unbreakable word — the row shrinks to its true min-content. Includes the CSS §4.5 specified-size suggestion cap so `flexBasis: 0` / `flex: 1 1 0` Fill-leader patterns continue to behave as expected (auto-min = `min(content-min, specified-size)`). Yoga preset is unaffected. `setMinWidth(0)` remains the canonical CSS escape hatch for non-wrappable Text and for containers narrower than their longest unbreakable word.
+
+### Fixed
+
+- Remeasure flex-grow auto-main content when distribution changes its size.
+- Respect explicit `setFlexShrink(0)` for overflow children.
+- Bench compare loads source entrypoint instead of stale dist.
+- Skip CI publish step when version is already on npm (idempotent re-run safety).
 
 ## [0.5.1] - 2026-04-09
 
