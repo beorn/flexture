@@ -7,12 +7,35 @@
 import { type DefaultsPreset, DEFAULT_PRESET } from "./defaults.js"
 
 /**
- * A value with a unit (point, percent, or auto).
+ * A value with a unit (point, percent, cqi, auto, or calc).
+ *
+ * For `UNIT_CALC` values, `value` is ignored and `expr` carries the parsed
+ * math-function tree (min/max/clamp). Other unit kinds leave `expr` undefined.
  */
 export interface Value {
   value: number
-  unit: number // UNIT_UNDEFINED | UNIT_POINT | UNIT_PERCENT | UNIT_AUTO
+  unit: number // UNIT_UNDEFINED | UNIT_POINT | UNIT_PERCENT | UNIT_AUTO | UNIT_CQI | UNIT_CQMIN | UNIT_CALC
+  expr?: MathExpr
 }
+
+/**
+ * Math-function expression tree (A0.3). Late-bound: evaluated at the same
+ * resolveValue call site as plain leaves, against the same `availableSize`
+ * and `queryInlineSize`. No epoch crossing.
+ *
+ *   - `Value` leaves: any non-CALC value (POINT, PERCENT, CQI, CQMIN, etc.)
+ *   - `{ fn: "min", args }`: minimum of resolved args
+ *   - `{ fn: "max", args }`: maximum of resolved args
+ *   - `{ fn: "clamp", args: [min, val, max] }`: clamp val between min and max
+ *
+ * Nesting is allowed: a `MathExpr` arg can be another `MathExpr` (recursively
+ * evaluated) or a `Value` leaf.
+ */
+export type MathExpr =
+  | Value
+  | { readonly fn: "min"; readonly args: readonly MathExpr[] }
+  | { readonly fn: "max"; readonly args: readonly MathExpr[] }
+  | { readonly fn: "clamp"; readonly args: readonly [MathExpr, MathExpr, MathExpr] }
 
 /**
  * Measure function signature for intrinsic sizing.

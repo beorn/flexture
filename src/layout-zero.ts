@@ -277,6 +277,10 @@ function layoutNode(
     // cqi/cqmin against the nearest CQ ancestor's frozen inline-size (A0.1 Pass 2).
     // No CQ ancestor → resolves to 0 (same defensive shape as percent vs NaN).
     nodeWidth = resolveValue(style.width, availableWidth, ownQueryInlineSize)
+  } else if (style.width.unit === C.UNIT_CALC) {
+    // A0.3 math function — evaluates late-bound against the same epoch as its
+    // leaf units (cqi → Pass 2 via ownQueryInlineSize).
+    nodeWidth = resolveValue(style.width, availableWidth, ownQueryInlineSize)
   } else if (Number.isNaN(availableWidth)) {
     // Unconstrained: use NaN to signal shrink-wrap (will be computed from children)
     nodeWidth = NaN
@@ -567,6 +571,9 @@ function layoutNode(
       // A0.1 Pass 2: flex-basis in cqi resolves against child's nearest CQ ancestor.
       const qsize = findContainerQuerySize(child)
       baseSize = Number.isNaN(qsize) ? 0 : qsize * (childStyle.flexBasis.value / 100)
+    } else if (childStyle.flexBasis.unit === C.UNIT_CALC) {
+      // A0.3: flex-basis in calc() — evaluate against child's CQ context.
+      baseSize = resolveValue(childStyle.flexBasis, mainAxisSize, findContainerQuerySize(child))
     } else {
       const sizeVal = isRow ? childStyle.width : childStyle.height
       if (sizeVal.unit === C.UNIT_POINT) {
@@ -577,6 +584,9 @@ function layoutNode(
         // A0.1 Pass 2: child's width/height-as-flex-basis in cqi.
         const qsize = findContainerQuerySize(child)
         baseSize = Number.isNaN(qsize) ? 0 : qsize * (sizeVal.value / 100)
+      } else if (sizeVal.unit === C.UNIT_CALC) {
+        // A0.3: child's width-as-flex-basis is a calc expression.
+        baseSize = resolveValue(sizeVal, mainAxisSize, findContainerQuerySize(child))
       } else if (child.hasMeasureFunc()) {
         // For auto-sized children with measureFunc,
         // pre-measure to get intrinsic content size as flex base size.
@@ -769,6 +779,9 @@ function layoutNode(
           if (!Number.isNaN(qsize)) {
             specifiedSize = qsize * (childStyle.flexBasis.value / 100)
           }
+        } else if (childStyle.flexBasis.unit === C.UNIT_CALC) {
+          // A0.3: math-function flex-basis specified-size.
+          specifiedSize = resolveValue(childStyle.flexBasis, mainAxisSize, findContainerQuerySize(child))
         } else if (childStyle.flexBasis.unit === C.UNIT_AUTO || childStyle.flexBasis.unit === C.UNIT_UNDEFINED) {
           // flex-basis: auto → use main-axis size
           const sizeVal = isRow ? childStyle.width : childStyle.height
@@ -782,6 +795,9 @@ function layoutNode(
             if (!Number.isNaN(qsize)) {
               specifiedSize = qsize * (sizeVal.value / 100)
             }
+          } else if (sizeVal.unit === C.UNIT_CALC) {
+            // A0.3: math-function main-axis size.
+            specifiedSize = resolveValue(sizeVal, mainAxisSize, findContainerQuerySize(child))
           }
           // else: auto/undef size + auto flex-basis → no cap (infinity)
         }
@@ -1626,6 +1642,9 @@ function layoutNode(
         // ancestor's frozen inline-size — Phase 1 supports inline-size only, so
         // cross-axis cqi is "X% of the CQ container's INLINE width, expressed as
         // a height" (matches CSS). 0 if no CQ ancestor.
+        childCrossSize = resolveValue(crossDim, crossAxisSize, findContainerQuerySize(child))
+      } else if (crossDim.unit === C.UNIT_CALC) {
+        // A0.3: cross-axis math function — same epoch, same queryInlineSize.
         childCrossSize = resolveValue(crossDim, crossAxisSize, findContainerQuerySize(child))
       } else if (crossDim.unit === C.UNIT_FIT_CONTENT || crossDim.unit === C.UNIT_SNUG_CONTENT) {
         // Fit-content on cross axis: shrink-wrap to content, don't stretch

@@ -6,7 +6,7 @@
 
 import * as C from "./constants.js"
 import type { Node } from "./node-zero.js"
-import type { Value } from "./types.js"
+import type { MathExpr, Value } from "./types.js"
 
 // ============================================================================
 // Shared Traversal Stack
@@ -234,6 +234,13 @@ export function resolveValue(value: Value, availableSize: number, queryInlineSiz
         return 0
       }
       return queryInlineSize * (value.value / 100)
+    case C.UNIT_CALC:
+      // A0.3 math function. Late-bound per the contract in
+      // vendor/flexily/docs/two-phase-layout.md — evaluates at the same epoch
+      // as its leaf units (cqi → Pass 2). A defensively-malformed CALC value
+      // without an `expr` payload resolves to 0 (same surface as UNDEFINED).
+      if (!value.expr) return 0
+      return evaluateMathExpr(value.expr, availableSize, queryInlineSize)
     default:
       // UNIT_UNDEFINED, UNIT_AUTO, UNIT_FIT_CONTENT, UNIT_SNUG_CONTENT all
       // resolve to 0 here. Callers that need auto-rule semantics (CSS §4.5
@@ -242,6 +249,49 @@ export function resolveValue(value: Value, availableSize: number, queryInlineSiz
       // layout-zero.ts:587 for that special case.
       return 0
   }
+}
+
+/**
+ * Evaluate a math-function expression (A0.3) against the current resolution
+ * context. Recursively resolves leaf `Value`s via `resolveValue` and applies
+ * `min` / `max` / `clamp` semantics. CSS-aligned:
+ *   - `min()` / `max()` with zero args fall back to 0 (defensive; spec disallows)
+ *   - `clamp(min, val, max)` enforces `min ≤ result ≤ max`, with `min` winning
+ *     ties when `min > max` (CSS clamp definition)
+ */
+export function evaluateMathExpr(expr: MathExpr, availableSize: number, queryInlineSize: number): number {
+  if ("unit" in expr) {
+    return resolveValue(expr, availableSize, queryInlineSize)
+  }
+  if (expr.fn === "min") {
+    if (expr.args.length === 0) return 0
+    let acc = Infinity
+    for (const arg of expr.args) {
+      const v = evaluateMathExpr(arg, availableSize, queryInlineSize)
+      if (v < acc) acc = v
+    }
+    return acc
+  }
+  if (expr.fn === "max") {
+    if (expr.args.length === 0) return 0
+    let acc = -Infinity
+    for (const arg of expr.args) {
+      const v = evaluateMathExpr(arg, availableSize, queryInlineSize)
+      if (v > acc) acc = v
+    }
+    return acc
+  }
+  // clamp(min, val, max)
+  const minV = evaluateMathExpr(expr.args[0], availableSize, queryInlineSize)
+  const val = evaluateMathExpr(expr.args[1], availableSize, queryInlineSize)
+  const maxV = evaluateMathExpr(expr.args[2], availableSize, queryInlineSize)
+  // CSS spec: when min > max, min wins (clamp degenerates to min). Apply this
+  // BEFORE the val < minV check — otherwise a val > maxV in the unordered-bounds
+  // case would erroneously return maxV (< minV), violating result >= minV.
+  if (minV > maxV) return minV
+  if (val < minV) return minV
+  if (val > maxV) return maxV
+  return val
 }
 
 /**
