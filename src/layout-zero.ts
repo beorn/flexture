@@ -17,7 +17,12 @@
 
 import * as C from "./constants.js"
 import type { Node } from "./node-zero.js"
-import { applyMinMax, findContainerQuerySize, resolveValue } from "./utils.js"
+import {
+  applyMinMax,
+  findContainerQuerySize,
+  isDevModeAssertionsEnabled,
+  resolveValue,
+} from "./utils.js"
 import { log } from "./logger.js"
 import { getTrace } from "./trace.js"
 
@@ -2333,6 +2338,37 @@ function layoutNode(
   const roundedAbsParentTop = Math.round(absY)
   layout.left = roundedAbsLeft - roundedAbsParentLeft
   layout.top = roundedAbsTop - roundedAbsParentTop
+
+  // =========================================================================
+  // PHASE 10a: Dev-mode invariance assertions (A0.1)
+  // =========================================================================
+  // Catch "intrinsic leak" — when a CQ container's frozen inline-size (from
+  // Pass 1) diverges from its final rendered width (Pass 2 + Phase 9). This
+  // means descendants resolved cqi/cqmin against a size that doesn't match
+  // what's actually drawn — silently incorrect layout, exactly the trap the
+  // two-phase algorithm is designed to prevent.
+  //
+  // Common cause: a CQ container with auto-width and `containSize: false`
+  // (default) lets Phase 9 shrink-wrap to children, while Pass 1 froze the
+  // pre-shrink value. The fix is `setContainSize(true)` OR an explicit width.
+  //
+  // Gated by `isDevModeAssertionsEnabled()` — zero cost in production builds.
+  // Allow 1-cell tolerance for edge-rounding ambiguity (the freeze stores a
+  // float; layout.width is integer-rounded).
+  if (
+    style.containerType !== C.CONTAINER_TYPE_NORMAL &&
+    isDevModeAssertionsEnabled() &&
+    !Number.isNaN(node.getFrozenQuerySize()) &&
+    Math.abs(node.getFrozenQuerySize() - layout.width) > 1
+  ) {
+    const frozen = node.getFrozenQuerySize()
+    throw new Error(
+      `flexily intrinsic-leak: CQ container frozen at ${frozen} cells (Pass 1) but ` +
+        `rendered at ${layout.width} cells (Phase 9). Descendants' cqi/cqmin values ` +
+        `resolved against the frozen size won't match the rendered layout. Fix: ` +
+        `setContainSize(true) OR set an explicit width on this container.`,
+    )
+  }
 
   // =========================================================================
   // PHASE 11: Layout Absolute Children

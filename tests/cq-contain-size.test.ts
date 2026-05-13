@@ -143,30 +143,23 @@ describe("[A0.1] containSize invariant", () => {
     expect(widthSmall).toBe(160)
   })
 
-  test("setContainSize toggle changes Phase 9 shrink-wrap for ROOT auto-sized CQ container", () => {
-    // For a ROOT-level auto-sized CQ container (no parent flex distribution to
-    // override), Phase 9's containSize gate is observable: with containSize=false,
-    // the root shrinks to children's intrinsic size; with containSize=true, it
-    // stays at the calculateLayout-supplied available size.
+  test("containSize=true on auto-sized ROOT CQ container keeps parent-supplied width", () => {
+    // For a ROOT-level auto-sized CQ container (no parent flex distribution),
+    // Phase 9's containSize gate keeps the width at the calculateLayout-supplied
+    // available size instead of shrinking to children. The opposite scenario
+    // (containSize=false) is unsound — `cq-invariance.test.ts` shows the
+    // dev-mode "intrinsic leak" assertion fires on it.
     const flex = createFlexily()
     const cq = flex.createNode()
     cq.setContainerType(C.CONTAINER_TYPE_INLINE_SIZE)
-    // No setWidth — auto
-    // containSize defaults to false → shrink-wraps to children
+    cq.setContainSize(true)
+    // No setWidth — auto, but contained.
 
     const child = flex.createNode()
     child.setWidth(50)
-
     cq.insertChild(child, 0)
 
     flex.calculateLayout(cq, 200, 100)
-    const widthBefore = cq.getComputedWidth() // shrunk to 50
-
-    cq.setContainSize(true)
-    flex.calculateLayout(cq, 200, 100)
-    const widthAfter = cq.getComputedWidth() // stays 200
-
-    expect(widthBefore).toBe(50)
-    expect(widthAfter).toBe(200)
+    expect(cq.getComputedWidth()).toBe(200)
   })
 })

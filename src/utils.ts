@@ -161,6 +161,25 @@ export function getEdgeBorderValue(arr: [number, number, number, number, number,
 }
 
 /**
+ * Whether flexily's dev-mode runtime assertions should fire.
+ *
+ * Enabled when:
+ *   - `process.env.NODE_ENV !== "production"` (typical dev/test contexts), OR
+ *   - `process.env.SILVERY_STRICT` is set to any non-empty value (silvery's
+ *     unified strict-mode knob — flexily honors it for cross-package parity
+ *     since flexily ships under silvery)
+ *
+ * The check is intentionally permissive: production builds default to OFF
+ * (zero runtime cost), and any explicit strict-mode signal forces ON.
+ */
+export function isDevModeAssertionsEnabled(): boolean {
+  if (typeof process === "undefined" || typeof process.env === "undefined") return false
+  const env = process.env
+  if (env.SILVERY_STRICT !== undefined && env.SILVERY_STRICT !== "") return true
+  return env.NODE_ENV !== "production"
+}
+
+/**
  * Walk up the parent chain from `node`, return the nearest ancestor's frozen
  * container-query inline-size (set by Pass 1 of layoutNode). NaN if no CQ ancestor.
  *
