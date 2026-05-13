@@ -1184,6 +1184,24 @@ export class Node {
   }
 
   /**
+   * Set the width as a container-query inline-size percentage (A0.1).
+   *
+   * Resolves at layout time against the nearest CQ ancestor's frozen inline-size.
+   * When no CQ ancestor exists, resolves to 0 — same defensive convention as
+   * `setWidthPercent` against a NaN parent.
+   *
+   * Requires the layout engine to advertise `containerQueryUnits` capability —
+   * silvery's `requireCapability("containerQueryUnits", ...)` should gate this
+   * at the call site for actionable error messages under yoga.
+   *
+   * @param value - Width as percentage of nearest CQ container's inline-size (0-100)
+   */
+  setWidthCqi(value: number): void {
+    this._style.width = { value, unit: C.UNIT_CQI }
+    this.markDirty()
+  }
+
+  /**
    * Set the width to fit-content mode.
    *
    * CSS fit-content = min(max-content, max(min-content, available-width)).
@@ -1237,6 +1255,21 @@ export class Node {
    */
   setHeightPercent(value: number): void {
     this._style.height = { value, unit: C.UNIT_PERCENT }
+    this.markDirty()
+  }
+
+  /**
+   * Set the height as a container-query inline-size percentage (A0.1).
+   *
+   * In Phase 1 (inline-only cqi), height-as-cqi still resolves against the
+   * CQ container's **inline** size — this matches CSS where `height: 50cqi`
+   * means "50% of container inline-size, expressed as a height". Block-size
+   * units (`cqb`) arrive in a later phase.
+   *
+   * @param value - Height as percentage of nearest CQ container's inline-size (0-100)
+   */
+  setHeightCqi(value: number): void {
+    this._style.height = { value, unit: C.UNIT_CQI }
     this.markDirty()
   }
 

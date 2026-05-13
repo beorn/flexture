@@ -160,9 +160,17 @@ export function getEdgeBorderValue(arr: [number, number, number, number, number,
 }
 
 /**
- * Resolve a value (point or percent) to an absolute number.
+ * Resolve a value (point, percent, or container-query unit) to an absolute number.
+ *
+ * Container-query units (`UNIT_CQI`, `UNIT_CQMIN`) resolve against `queryInlineSize`,
+ * which must be the **frozen** inline-size of the nearest CQ ancestor (Phase 1 of the
+ * A0.1 two-phase layout). When no CQ ancestor exists (i.e. `queryInlineSize` is NaN),
+ * cqi/cqmin resolve to 0 — same defensive convention as `UNIT_PERCENT` against NaN.
+ *
+ * In Phase 1, cqmin is identical to cqi because block-size queries aren't wired yet.
+ * The constant is reserved for forward-compat.
  */
-export function resolveValue(value: Value, availableSize: number): number {
+export function resolveValue(value: Value, availableSize: number, queryInlineSize = NaN): number {
   switch (value.unit) {
     case C.UNIT_POINT:
       return value.value
@@ -172,6 +180,16 @@ export function resolveValue(value: Value, availableSize: number): number {
         return 0
       }
       return availableSize * (value.value / 100)
+    case C.UNIT_CQI:
+    case C.UNIT_CQMIN:
+      // cqi against an unfrozen / absent CQ container resolves to 0 — same shape as
+      // percent against NaN. Throwing here would force every call site to handle the
+      // "no CQ ancestor" case; defaulting to 0 lets `requireCapability("containerQueryUnits", ...)`
+      // do the user-facing diagnostic at first paint instead (see EngineCapabilities).
+      if (Number.isNaN(queryInlineSize)) {
+        return 0
+      }
+      return queryInlineSize * (value.value / 100)
     default:
       // UNIT_UNDEFINED, UNIT_AUTO, UNIT_FIT_CONTENT, UNIT_SNUG_CONTENT all
       // resolve to 0 here. Callers that need auto-rule semantics (CSS §4.5

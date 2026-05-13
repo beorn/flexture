@@ -93,3 +93,8 @@ export const UNIT_PERCENT = 2
 export const UNIT_AUTO = 3
 export const UNIT_FIT_CONTENT = 4
 export const UNIT_SNUG_CONTENT = 5
+// Container-query units (A0.1) — resolve against frozen query-container inline-size.
+// Phase 1: inline-size only. cqi == "1% of nearest CQ ancestor's inline-size".
+// cqmin in 1D (Phase 1) is identical to cqi — block-size resolution arrives in a later phase.
+export const UNIT_CQI = 6
+export const UNIT_CQMIN = 7
