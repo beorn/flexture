@@ -122,6 +122,11 @@ export {
   UNIT_AUTO,
   UNIT_FIT_CONTENT,
   UNIT_SNUG_CONTENT,
+  UNIT_CQI,
+  UNIT_CQMIN,
+  // Container queries (A0.1)
+  CONTAINER_TYPE_NORMAL,
+  CONTAINER_TYPE_INLINE_SIZE,
 } from "./constants.js"
 
 // Types
