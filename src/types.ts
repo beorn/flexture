@@ -198,6 +198,13 @@ export interface Style {
   // Phase 1 supports CONTAINER_TYPE_INLINE_SIZE; descendants' cqi/cqmin values
   // resolve against this container's frozen inline-size from Pass 1.
   containerType: number
+
+  // CSS `contain: size` (A0.1) — children's intrinsic sizes do not propagate
+  // into this node's size. Required for sound CQ containers (without it, child
+  // sizes feed back into container size → CQ branch flip changes child sizes →
+  // oscillation). Phase 1 implements inline-size containment only (paired with
+  // containerType: inline-size).
+  containSize: boolean
 }
 
 /**
@@ -255,5 +262,6 @@ export function createDefaultStyle(preset: DefaultsPreset = DEFAULT_PRESET): Sty
     gap: [0, 0],
     overflow: 0, // OVERFLOW_VISIBLE (same in CSS and Yoga)
     containerType: 0, // CONTAINER_TYPE_NORMAL — not a CQ container by default (A0.1)
+    containSize: false, // CSS contain: size — off by default (A0.1)
   }
 }

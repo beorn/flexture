@@ -2053,12 +2053,24 @@ function layoutNode(
 
     // Skip main-axis shrink-wrap when aspect ratio determined this dimension
     const hasAR = !Number.isNaN(aspectRatio) && aspectRatio > 0
-    if (isRow && style.width.unit !== C.UNIT_POINT && style.width.unit !== C.UNIT_PERCENT && !hasAR) {
+    // A0.1: CSS `contain: size` blocks children's intrinsic contributions on
+    // the inline axis. Phase 1 contains inline-size only — block-size keeps
+    // its existing shrink-wrap behavior. Without this, a CQ container with
+    // child sizes feeding back into its own size would oscillate when a CQ
+    // branch flip changed child size.
+    const containsInlineSize = style.containSize && style.containerType !== C.CONTAINER_TYPE_NORMAL
+    if (
+      isRow &&
+      style.width.unit !== C.UNIT_POINT &&
+      style.width.unit !== C.UNIT_PERCENT &&
+      !hasAR &&
+      !containsInlineSize
+    ) {
       // Auto-width row: shrink-wrap to content
       nodeWidth = actualUsedMain + innerLeft + innerRight
     }
     if (!isRow && style.height.unit !== C.UNIT_POINT && style.height.unit !== C.UNIT_PERCENT && !hasAR) {
-      // Auto-height column: shrink-wrap to content
+      // Auto-height column: shrink-wrap to content (block-axis — uncontained in Phase 1)
       nodeHeight = actualUsedMain + innerTop + innerBottom
     }
     // For cross axis, compute shrink-wrap size
@@ -2106,9 +2118,11 @@ function layoutNode(
       style.width.unit !== C.UNIT_POINT &&
       style.width.unit !== C.UNIT_PERCENT &&
       Number.isNaN(availableWidth) &&
-      !hasAR
+      !hasAR &&
+      !containsInlineSize
     ) {
       // Auto-width column: shrink-wrap to total cross size (accounts for multi-line)
+      // — also gated by containSize on the inline-axis (here inline === width === cross).
       nodeWidth = totalCrossSize + innerLeft + innerRight
     }
   }

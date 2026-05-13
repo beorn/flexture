@@ -1742,6 +1742,25 @@ export class Node {
   }
 
   /**
+   * Set CSS `contain: size` on this node (A0.1).
+   *
+   * When true, children's intrinsic sizes do NOT propagate into this node's
+   * size — the node's inline-size is determined entirely by parent constraints,
+   * not by children. Required pairing with `setContainerType(INLINE_SIZE)` to
+   * make a CQ container sound: without containSize, child sizes feed back into
+   * container size, breaking the two-phase invariance guarantee.
+   *
+   * Phase 1 implements inline-size containment only (the contained axis matches
+   * the CQ query axis). Block-size containment arrives with `cqb` units.
+   *
+   * @param value - True to enable size containment on this node
+   */
+  setContainSize(value: boolean): void {
+    this._style.containSize = value
+    this.markDirty()
+  }
+
+  /**
    * Get the node's frozen container-query inline-size from the most recent layout (A0.1).
    *
    * Populated by `layoutNode` during Pass 1 when `style.containerType ===
