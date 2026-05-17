@@ -56,9 +56,17 @@ async function detectLogger(namespace: string): Promise<ConditionalLogger> {
   }
 }
 
-// Eagerly initialize (top-level await)
-// This runs once at module load time
-_logger = await detectLogger("flexily:layout")
+// Kick off logger discovery without making Flexily an async module. Bun's
+// bundler rejects sync require() calls when any transitive dependency has
+// top-level await, and Flexily is often imported through compatibility layers.
+void detectLogger("flexily:layout").then(
+  (logger) => {
+    _logger = logger
+  },
+  () => {
+    _logger = { debug: undefined }
+  },
+)
 
 /** Logger instance - use with optional chaining: `log.debug?.('message')` */
 export const log: ConditionalLogger = {
